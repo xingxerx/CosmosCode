@@ -1,0 +1,15 @@
+{
+  "name": "cosmoscode",
+  "version": "1.0.0",
+  "description": "Cosmology and Medicine Codebase",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@zowe/cli": "^8.20.0"
+  }
+}
