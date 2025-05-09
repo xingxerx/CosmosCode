@@ -1,0 +1,64 @@
+
+{
+  "name": "Amit Kumar",
+  "type": "personal",
+  "bio": "Open Source Enthusiast!",
+
+  "links": [
+    {
+      "name": "Follow me on Twitter",
+      "url": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "icon": "FaTwitter"
+    },
+    {
+      "name": "Follow me on LinkedIn",
+      "url": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "icon": "FaLinkedin"
+    },
+    {
+      "name": "Follow me on GitHub",
+      "url": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "icon": "FaGithub"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Started Open Source",
+      "date": "October 2021",
+      "icon": "FaDollarSign",
+      "color": "grey",
+      "description": "Started Open Source",
+      "url": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+    }
+  ]
+}
+{
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:0-20",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "ms-azuretools.vscode-docker",
+        "eamodio.gitlens",
+        "mhutchie.git-graph",
+        "ms-vscode.vscode-typescript-tslint-plugin"
+      ]
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest"
+    }
+  },
+  "postCreateCommand": "npm install",
+  "remoteUser": "node"
+}
+{
+  "name": "Amit Kumar",
+  "type": "personal",
+  "bio": "Open Source Enthusiast!",
+
+  "links": [
+    {
+      "name": "Follow me on Twitter",
