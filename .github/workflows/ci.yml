@@ -19,11 +19,32 @@ jobs:
         run: npm ci
       - name: Run unit tests
         run: npm test
+      - name: Run integration tests
+        run: npm run test:integration
+      - name: Generate coverage report
+        run: npm run test:coverage
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run ESLint
+        run: npx eslint .
       
   build:
-    needs: test
+    needs: [test, lint]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Build Docker image
         run: docker build -t cosmoscode .
+      - name: Run container tests
+        run: docker run cosmoscode npm test

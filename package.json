@@ -4,9 +4,8 @@
   "description": "Cosmology and Medicine Codebase",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test": "node run-tests.js",
+    "test:simple": "node src/simple-test.js"
   },
   "keywords": [],
   "author": "",
