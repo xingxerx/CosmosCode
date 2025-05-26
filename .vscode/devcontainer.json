@@ -42,13 +42,18 @@
         "ms-azuretools.vscode-docker",
         "eamodio.gitlens",
         "mhutchie.git-graph",
-        "ms-vscode.vscode-typescript-tslint-plugin"
+        "ms-vscode.vscode-typescript-tslint-plugin",
+        "ms-python.python",
+        "ms-toolsai.jupyter"
       ]
     }
   },
   "features": {
     "ghcr.io/devcontainers/features/git:1": {
       "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.10"
     }
   },
   "postCreateCommand": "npm install",
@@ -62,3 +67,55 @@
   "links": [
     {
       "name": "Follow me on Twitter",
+      "url": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "icon": "FaTwitter"
+    },
+    {
+      "name": "Follow me on LinkedIn",
+      "url": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "icon": "FaLinkedin"
+    },
+    {
+      "name": "Follow me on GitHub",
+      "url": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "icon": "FaGithub"
+    }
+  ],
+  "milestones": [
+    {
+      "title": "Started Open Source",
+      "date": "October 2021",
+      "icon": "FaDollarSign",
+      "color": "grey",
+      "description": "Started Open Source",
+      "url": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+    }
+  ]
+}
+{
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:0-20",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "ms-azuretools.vscode-docker",
+        "eamodio.gitlens",
+        "mhutchie.git-graph",
+        "ms-vscode.vscode-typescript-tslint-plugin",
+        "ms-python.python",
+        "ms-toolsai.jupyter"
+      ]
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.10"
+    }
+  },
+  "postCreateCommand": "npm install",
+  "remoteUser": "node"
+}
