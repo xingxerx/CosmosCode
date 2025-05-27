@@ -1122,7 +1122,7 @@ if (!fs.existsSync('public/index.html')) {
         let currentSimulation = null;
         
         // Handle form submission
-        simulationForm.addEventListener('submit', async (event) => {
+        simulationForm.addEventListener('submit', function(event) {
             event.preventDefault();
             
             // Show loading indicator
@@ -1143,26 +1143,28 @@ if (!fs.existsSync('public/index.html')) {
             }
             
             // Send simulation request
-            try {
-                const response = await fetch('/api/simulations', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ parameters })
-                });
-                
+            fetch('/api/simulations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ parameters })
+            })
+            .then(response => {
                 if (!response.ok) {
-                    throw new Error('Request failed with status ' + response.status);
+                    throw new Error('Request failed');
                 }
-                
-                const data = await response.json();
+                return response.json();
+            })
+            .then(data => {
                 currentSimulation = data;
                 displayResults(data);
-            } catch (error) {
+            })
+            .catch(error => {
                 console.error('Error running simulation:', error);
                 alert('An error occurred while running the simulation. Please try again.');
-            } finally {
+            })
+            .finally(() => {
                 loadingElement.style.display = 'none';
-            }
+            });
         });
         
         // Display simulation results
