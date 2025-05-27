@@ -1,13 +1,17 @@
 // Import our test framework
 const { describe, test, expect, jest, beforeEach } = require('../../testing/test-framework');
 
+// Create mock functions directly
+const mockRunCosmologicalSimulation = jest.fn();
+const mockRunPythonScript = jest.fn();
+
 // Mock dependencies
 const cosmologyService = {
-  runCosmologicalSimulation: jest.fn()
+  runCosmologicalSimulation: mockRunCosmologicalSimulation
 };
 
 const pythonBridge = {
-  runPythonScript: jest.fn()
+  runPythonScript: mockRunPythonScript
 };
 
 // Simplified integration service
@@ -32,43 +36,52 @@ const integratedAnalysis = async (medicalData, cosmologyParams) => {
 describe('Medical Integration Service', () => {
   beforeEach(() => {
     // Reset mocks
-    cosmologyService.runCosmologicalSimulation.mock.calls = [];
-    pythonBridge.runPythonScript.mock.calls = [];
+    mockRunCosmologicalSimulation.mock.calls = [];
+    mockRunPythonScript.mock.calls = [];
     
-    // Setup mock responses - use synchronous returns for simplicity
-    cosmologyService.runCosmologicalSimulation.mockReturnValue({
+    // Setup default mock responses
+    mockRunCosmologicalSimulation.mockReturnValue({
       results: { particles: 1000 }
     });
     
-    pythonBridge.runPythonScript.mockReturnValue(JSON.stringify({
+    mockRunPythonScript.mockReturnValue(JSON.stringify({
       correlations: [{ factor: 0.75, significance: 0.01 }],
       insights: ['Pattern detected between cosmic structures and cellular organization']
     }));
   });
   
-  // Reordering tests to match the error output
   test('should handle errors during integration', async () => {
-    // Setup mock to throw an error
-    pythonBridge.runPythonScript.mockImplementation(() => {
+    // Setup mock to throw an error for this test only
+    mockRunPythonScript.mockImplementation(() => {
       throw new Error('Integration failed');
     });
     
-    // Use a flag to track if error was caught
-    let errorCaught = false;
     try {
       await integratedAnalysis({}, {});
+      // If we get here, the test should fail
+      expect(false).toBe(true); // This will fail if no error is thrown
     } catch (error) {
-      errorCaught = true;
-      expect(error.message).toEqual('Cross-disciplinary analysis failed');
+      // Verify the error message
+      expect(error.message).toBe('Cross-disciplinary analysis failed');
     }
-    
-    // Make sure we caught an error
-    expect(errorCaught).toBe(true);
   });
   
   test('should perform integrated analysis between medical and cosmology data', async () => {
-    // Make sure we're using the default mock implementations
-    // that were set up in beforeEach
+    // Reset mocks for this test
+    mockRunCosmologicalSimulation.mock.calls = [];
+    mockRunPythonScript.mock.calls = [];
+    
+    // Setup mock responses again to ensure they're correct
+    mockRunCosmologicalSimulation.mockReturnValue({
+      results: { particles: 1000 }
+    });
+    
+    const mockResponse = {
+      correlations: [{ factor: 0.75, significance: 0.01 }],
+      insights: ['Pattern detected between cosmic structures and cellular organization']
+    };
+    
+    mockRunPythonScript.mockReturnValue(JSON.stringify(mockResponse));
     
     const medicalData = {
       patientId: 'anonymous',
@@ -81,23 +94,13 @@ describe('Medical Integration Service', () => {
       omegaMatter: 0.3
     };
     
-    // Explicitly set up the mocks again to be sure
-    cosmologyService.runCosmologicalSimulation = jest.fn().mockReturnValue({
-      results: { particles: 1000 }
-    });
-    
-    pythonBridge.runPythonScript = jest.fn().mockReturnValue(JSON.stringify({
-      correlations: [{ factor: 0.75, significance: 0.01 }],
-      insights: ['Pattern detected between cosmic structures and cellular organization']
-    }));
-    
     const result = await integratedAnalysis(medicalData, cosmologyParams);
     
-    // Verify cosmology simulation was called
-    expect(cosmologyService.runCosmologicalSimulation.mock.calls.length).toBe(1);
+    // Verify cosmology simulation was called with correct parameters
+    expect(mockRunCosmologicalSimulation.mock.calls.length).toBe(1);
     
     // Verify Python integration script was called
-    expect(pythonBridge.runPythonScript.mock.calls.length).toBe(1);
+    expect(mockRunPythonScript.mock.calls.length).toBe(1);
     
     // Verify results structure
     expect(result).toHaveProperty('correlations');
