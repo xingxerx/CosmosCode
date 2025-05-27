@@ -527,7 +527,7 @@ module.exports = new VisualizationService();
 }
 
 // Import services
-const simulationEngine = require('./services/cosmology/simulationEngine');
+const cosmologySimulationEngine = require('./services/cosmology/simulationEngine');
 const visualizationService = require('./services/visualization/visualizationService');
 const logger = require('./utils/logger');
 
@@ -570,7 +570,7 @@ app.post('/api/simulations', (req, res) => {
   
   // Run simulation
   try {
-    const result = simulationEngine.runCosmologicalSimulation(parameters);
+    const result = cosmologySimulationEngine.runCosmologicalSimulation(parameters);
     simulations.push(result);
     
     res.status(201).json(result);

@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { spawn } = require('child_process');
 const waitOn = require('wait-on');
+const { fail } = require('assert');
 
 // Configuration for E2E tests
 const API_URL = process.env.API_URL || 'http://localhost:3000/api';

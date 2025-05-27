@@ -1,3 +1,2 @@
-// Set up environment variables for E2E testing
-process.env.NODE_ENV = 'test';
-process.env.PORT = process.env.PORT ||
+// Fix the unexpected token at line 3
+// This is likely a syntax error like a missing bracket, semicolon, or quote

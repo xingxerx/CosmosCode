@@ -124,7 +124,7 @@ class VisualizationService {
         </div>
       </body>
       </html>
-    \`;
+    `;
     
     await fs.writeFile(filePath, htmlContent);
   }

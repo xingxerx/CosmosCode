@@ -1,7 +1,9 @@
 const tf = require('@tensorflow/tfjs-node');
 const { runPythonScript } = require('../pythonBridge');
-const logger = require('../../utils/logger');
 const path = require('path');
+const fs = require('fs').promises;
+const os = require('os');
+const logger = require('../../utils/logger');
 
 /**
  * Loads a pre-trained model for cosmological predictions

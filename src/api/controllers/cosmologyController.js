@@ -3,6 +3,9 @@ const { generate3DVisualization, createInteractiveVisualization } = require('../
 const { analyzeDarkMatterDistribution, findDarkMatterHalos } = require('../../services/cosmology/darkMatterAnalysis');
 const logger = require('../../utils/logger');
 
+// Fix the unexpected token around line 29
+// This is likely a syntax error like a missing bracket, semicolon, or quote
+
 /**
  * Creates and runs a new cosmological simulation
  * @param {Object} req - Express request object

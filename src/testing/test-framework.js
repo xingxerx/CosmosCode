@@ -1,6 +1,11 @@
 // Simple test framework wrapper to make tests more consistent
 // and to allow for easy mocking
 
+// Add global jest definition or replace with a different testing framework
+// Around line 14, either:
+const jest = require('jest');
+// Or modify the code to not use jest directly
+
 // Re-export Jest globals
 const jestGlobals = {
   describe: global.describe,

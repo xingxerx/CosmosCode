@@ -58,3 +58,7 @@ expect.extend({
     }
   }
 });
+
+// Add global jest definitions
+global.jest = jest;
+global.expect = expect;
