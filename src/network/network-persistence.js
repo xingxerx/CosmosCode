@@ -39,15 +39,24 @@ class NetworkPersistence {
         ip: info.ip
       }));
       
+      // Initialize stats if they don't exist
+      if (!internet.stats) {
+        internet.stats = {
+          messagesDelivered: 0,
+          messagesLost: 0,
+          totalLatency: 0
+        };
+      }
+      
       const networkState = {
         running: internet.running,
         nodes,
         connections,
         domains,
         stats: {
-          messagesDelivered: internet.stats.messagesDelivered,
-          messagesLost: internet.stats.messagesLost,
-          totalLatency: internet.stats.totalLatency
+          messagesDelivered: internet.stats.messagesDelivered || 0,
+          messagesLost: internet.stats.messagesLost || 0,
+          totalLatency: internet.stats.totalLatency || 0
         }
       };
       

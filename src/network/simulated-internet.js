@@ -16,6 +16,11 @@ class SimulatedInternet extends EventEmitter {
     this.packetLoss = options.packetLoss || 0.01; // 1% packet loss
     this.bandwidth = options.bandwidth || 1024 * 1024; // 1 MB/s
     this.running = false;
+    this.stats = {
+      messagesDelivered: 0,
+      messagesLost: 0,
+      totalLatency: 0
+    };
   }
 
   // Create a new node in the network
