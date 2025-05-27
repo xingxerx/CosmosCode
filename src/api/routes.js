@@ -13,5 +13,6 @@ router.delete('/simulations/:id', cosmologyController.deleteSimulation);
 // Medical data routes
 router.get('/medical/datasets', medicalController.listDatasets);
 router.post('/medical/analysis', medicalController.runAnalysis);
+router.post('/medical/integrated-analysis', medicalController.runIntegratedAnalysis);
 
 module.exports = router;
