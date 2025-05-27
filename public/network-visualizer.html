@@ -197,3 +197,243 @@
         updateNodesTable(nodes);
         updateDnsTable(dns);
         updateNetworkMap(nodes, status);
+      } catch (error) {
+        console.error('Error fetching network data:', error);
+      }
+    }
+    
+    // Update network statistics
+    function updateNetworkStats(stats) {
+      document.getElementById('active-nodes').textContent = stats.activeNodes;
+      document.getElementById('total-nodes').textContent = stats.nodeCount;
+      document.getElementById('connections').textContent = stats.connectionCount;
+      document.getElementById('messages-delivered').textContent = stats.messagesDelivered;
+      document.getElementById('messages-lost').textContent = stats.messagesLost;
+      document.getElementById('avg-latency').textContent = `${stats.averageLatency.toFixed(2)} ms`;
+      document.getElementById('bandwidth').textContent = `${(stats.bytesTransferred / 1024).toFixed(2)} KB`;
+      document.getElementById('packet-loss').textContent = `${(stats.packetLossRate * 100).toFixed(2)}%`;
+    }
+    
+    // Update nodes table
+    function updateNodesTable(data) {
+      const tbody = document.querySelector('#nodes-table tbody');
+      tbody.innerHTML = '';
+      
+      data.nodes.forEach(node => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${node.id}</td>
+          <td>${node.type}</td>
+          <td>${node.ip}</td>
+          <td>${node.status}</td>
+          <td>${node.connections}</td>
+          <td>
+            <button class="toggle-node" data-id="${node.id}" data-status="${node.status}">
+              ${node.status === 'online' ? 'Stop' : 'Start'}
+            </button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+      
+      // Add event listeners to toggle buttons
+      document.querySelectorAll('.toggle-node').forEach(button => {
+        button.addEventListener('click', async () => {
+          const nodeId = button.dataset.id;
+          const status = button.dataset.status;
+          
+          try {
+            const endpoint = status === 'online' ? 'stop-node' : 'start-node';
+            await fetch(`/api/network/${endpoint}/${nodeId}`, { method: 'POST' });
+            fetchNetworkData();
+          } catch (error) {
+            console.error(`Error toggling node ${nodeId}:`, error);
+          }
+        });
+      });
+    }
+    
+    // Update DNS table
+    function updateDnsTable(data) {
+      const tbody = document.querySelector('#dns-table tbody');
+      tbody.innerHTML = '';
+      
+      if (!data.domains || !Array.isArray(data.domains)) {
+        return;
+      }
+      
+      data.domains.forEach(domain => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${domain}</td>
+          <td>192.168.x.x</td>
+          <td>Unknown</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+    
+    // Update network map visualization
+    function updateNetworkMap(nodesData, stats) {
+      const mapContainer = document.getElementById('network-map');
+      mapContainer.innerHTML = '';
+      
+      const nodes = nodesData.nodes;
+      const width = mapContainer.clientWidth;
+      const height = mapContainer.clientHeight;
+      
+      // Position nodes in a circle
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const radius = Math.min(width, height) / 2 - 50;
+      
+      // Create router node in center
+      const routerNodes = nodes.filter(node => node.type === 'router');
+      const serverNodes = nodes.filter(node => node.type === 'server');
+      const clientNodes = nodes.filter(node => node.type === 'client');
+      
+      // Position router nodes near center
+      routerNodes.forEach((node, i) => {
+        const angle = (i / routerNodes.length) * 2 * Math.PI;
+        const x = centerX + Math.cos(angle) * (radius * 0.3);
+        const y = centerY + Math.sin(angle) * (radius * 0.3);
+        
+        createNodeElement(node, x, y, mapContainer);
+      });
+      
+      // Position server nodes in middle ring
+      serverNodes.forEach((node, i) => {
+        const angle = (i / serverNodes.length) * 2 * Math.PI;
+        const x = centerX + Math.cos(angle) * (radius * 0.6);
+        const y = centerY + Math.sin(angle) * (radius * 0.6);
+        
+        createNodeElement(node, x, y, mapContainer);
+      });
+      
+      // Position client nodes in outer ring
+      clientNodes.forEach((node, i) => {
+        const angle = (i / clientNodes.length) * 2 * Math.PI;
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        
+        createNodeElement(node, x, y, mapContainer);
+      });
+      
+      // Draw connections (simplified - just connect to nearest router)
+      if (routerNodes.length > 0) {
+        const router = routerNodes[0];
+        const routerEl = document.querySelector(`.node[data-id="${router.id}"]`);
+        if (routerEl) {
+          const routerRect = routerEl.getBoundingClientRect();
+          const routerX = parseInt(routerEl.style.left) + 20;
+          const routerY = parseInt(routerEl.style.top) + 20;
+          
+          // Connect all nodes to the router
+          document.querySelectorAll('.node:not([data-type="router"])').forEach(nodeEl => {
+            const nodeX = parseInt(nodeEl.style.left) + 20;
+            const nodeY = parseInt(nodeEl.style.top) + 20;
+            
+            createConnectionLine(routerX, routerY, nodeX, nodeY, mapContainer);
+          });
+        }
+      }
+    }
+    
+    // Create a node element
+    function createNodeElement(node, x, y, container) {
+      const nodeEl = document.createElement('div');
+      nodeEl.className = `node ${node.type} ${node.status}`;
+      nodeEl.dataset.id = node.id;
+      nodeEl.dataset.type = node.type;
+      nodeEl.style.left = `${x - 20}px`;
+      nodeEl.style.top = `${y - 20}px`;
+      nodeEl.textContent = node.id.substring(0, 2);
+      nodeEl.title = `${node.id} (${node.ip})`;
+      
+      container.appendChild(nodeEl);
+      return nodeEl;
+    }
+    
+    // Create a connection line
+    function createConnectionLine(x1, y1, x2, y2, container) {
+      const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+      const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+      
+      const line = document.createElement('div');
+      line.className = 'connection';
+      line.style.width = `${length}px`;
+      line.style.left = `${x1}px`;
+      line.style.top = `${y1}px`;
+      line.style.transform = `rotate(${angle}deg)`;
+      
+      container.appendChild(line);
+      return line;
+    }
+    
+    // Event listeners for buttons
+    document.getElementById('start-network').addEventListener('click', async () => {
+      try {
+        await fetch('/api/network/start', { method: 'POST' });
+        fetchNetworkData();
+      } catch (error) {
+        console.error('Error starting network:', error);
+      }
+    });
+    
+    document.getElementById('stop-network').addEventListener('click', async () => {
+      try {
+        await fetch('/api/network/stop', { method: 'POST' });
+        fetchNetworkData();
+      } catch (error) {
+        console.error('Error stopping network:', error);
+      }
+    });
+    
+    document.getElementById('add-node').addEventListener('click', async () => {
+      const type = prompt('Enter node type (client, server, router):', 'client');
+      const id = prompt('Enter node ID:', `${type}-${Date.now()}`);
+      
+      if (id && type) {
+        try {
+          await fetch('/api/network/nodes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, type })
+          });
+          fetchNetworkData();
+        } catch (error) {
+          console.error('Error adding node:', error);
+        }
+      }
+    });
+    
+    document.getElementById('add-connection').addEventListener('click', async () => {
+      const sourceId = prompt('Enter source node ID:');
+      const targetId = prompt('Enter target node ID:');
+      
+      if (sourceId && targetId) {
+        try {
+          await fetch('/api/network/connections', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sourceId, targetId })
+          });
+          fetchNetworkData();
+        } catch (error) {
+          console.error('Error adding connection:', error);
+        }
+      }
+    });
+    
+    document.getElementById('refresh').addEventListener('click', () => {
+      fetchNetworkData();
+    });
+    
+    // Initial data fetch
+    fetchNetworkData();
+    
+    // Refresh data periodically
+    setInterval(fetchNetworkData, 5000);
+  </script>
+</body>
+</html>
