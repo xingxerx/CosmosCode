@@ -52,6 +52,8 @@ class SimulatedInternet extends EventEmitter {
     }
     
     const connectionId = `${sourceId}-${targetId}`;
+    const reverseConnectionId = `${targetId}-${sourceId}`;
+    
     if (this.connections.has(connectionId)) {
       return this.connections.get(connectionId);
     }
@@ -66,7 +68,15 @@ class SimulatedInternet extends EventEmitter {
       bandwidth: this.bandwidth
     };
     
+    // Store the connection in both directions with the same properties
     this.connections.set(connectionId, connection);
+    this.connections.set(reverseConnectionId, {
+      ...connection,
+      id: reverseConnectionId,
+      source: targetId,
+      target: sourceId
+    });
+    
     source.connections.push(targetId);
     target.connections.push(sourceId);
     
@@ -101,13 +111,11 @@ class SimulatedInternet extends EventEmitter {
     };
     
     // Simulate network conditions
-    const connId1 = `${fromId}-${toId}`;
-    const connId2 = `${toId}-${fromId}`;
-    const connection = this.connections.get(connId1) || this.connections.get(connId2);
+    const connId = `${fromId}-${toId}`;
+    const connection = this.connections.get(connId);
 
     if (!connection) {
-      // This should ideally not be reached if the `source.connections.includes(toId)` check passed.
-      throw new Error(`Internal error: Connection object not found for link ${fromId}-${toId}.`);
+      throw new Error(`Connection object not found for link ${fromId}-${toId}`);
     }
     
     // Check for packet loss
@@ -211,62 +219,17 @@ class SimulatedInternet extends EventEmitter {
         currentHop: 1,
         data: message
       });
+      
+      // Emit an event for the first hop
+      this.emit('message-routed', {
+        originalSource: fromId,
+        finalDestination: toId,
+        path: path,
+        messageId: currentHopId
+      });
+      
     } catch (error) {
       throw new Error(`Error in first hop: ${error.message}`);
-    }
-    
-    // Schedule subsequent hops
-    for (let i = 1; i < path.length - 1; i++) {
-      const currentNodeId = path[i];
-      const nextNodeId = path[i + 1];
-      
-      // Get connection for latency calculation
-      const connectionId = `${path[i-1]}-${currentNodeId}`;
-      const connection = this.connections.get(connectionId);
-      
-      if (!connection) {
-        console.error(`Warning: Connection ${connectionId} not found for latency calculation`);
-        continue;
-      }
-      
-      const hopDelay = connection.latency + 10; // Add processing time
-      
-      // Use closure to capture the current values
-      ((currentNodeId, nextNodeId, hopIndex) => {
-        setTimeout(() => {
-          try {
-            if (hopIndex === path.length - 2) {
-              // Last hop - deliver the original message
-              const finalHopId = this.sendMessage(currentNodeId, nextNodeId, message);
-              
-              this.emit('message-routed', {
-                originalSource: fromId,
-                finalDestination: toId,
-                path: path,
-                messageId: finalHopId
-              });
-            } else {
-              // Intermediate hop - forward the routing information
-              this.sendMessage(currentNodeId, nextNodeId, {
-                type: 'routed-message',
-                originalSource: fromId,
-                finalDestination: toId,
-                path: path,
-                currentHop: hopIndex + 1,
-                data: message
-              });
-            }
-          } catch (error) {
-            this.emit('routing-error', {
-              originalSource: fromId,
-              currentNode: currentNodeId,
-              nextNode: nextNodeId,
-              finalDestination: toId,
-              error: error.message
-            });
-          }
-        }, hopDelay);
-      })(currentNodeId, nextNodeId, i);
     }
     
     return currentHopId; // Return ID of first hop
@@ -292,12 +255,7 @@ class SimulatedInternet extends EventEmitter {
         if (!currentNode) continue;
         
         for (const neighborId of currentNode.connections) {
-          const neighbor = this.nodes.get(neighborId);
-          
-          // Only consider online nodes and routers for intermediate hops
-          if (neighbor && 
-              (neighbor.status === 'online') && 
-              (neighborId === endId || neighbor.type === 'router')) {
+          if (!visited.has(neighborId)) {
             const newPath = [...path, neighborId];
             queue.push(newPath);
           }
@@ -308,13 +266,25 @@ class SimulatedInternet extends EventEmitter {
     return null; // No path found
   }
 
-  // Helper methods
-  _generateIP() {
-    return `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
+  // Generate a unique ID for messages
+  _generateId() {
+    return Math.random().toString(36).substring(2, 15);
   }
 
+  // Calculate message size in bytes (simple estimation)
+  _calculateMessageSize(message) {
+    return JSON.stringify(message).length;
+  }
+
+  // Generate a random IP address
+  _generateIP() {
+    return `192.168.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}`;
+  }
+
+  // Calculate random latency within the configured range
   _calculateLatency() {
-    return Math.floor(Math.random() * (this.latency.max - this.latency.min)) + this.latency.min;
+    const { min, max } = this.latency;
+    return Math.floor(min + Math.random() * (max - min));
   }
 }
 

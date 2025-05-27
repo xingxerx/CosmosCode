@@ -22,10 +22,15 @@ if (loaded) {
 // Set up event listeners for network events
 internet.on('message-delivered', ({ packet, to }) => {
   console.log(`\n[EVENT] Message delivered: ${packet.id} from ${packet.from} to ${to}`);
+  internet.stats.messagesDelivered++;
+  if (packet.timestamp) {
+    internet.stats.totalLatency += (Date.now() - packet.timestamp);
+  }
 });
 
 internet.on('packet-lost', ({ packet }) => {
   console.log(`\n[EVENT] Packet lost: ${packet.id} from ${packet.from} to ${packet.to}`);
+  internet.stats.messagesLost++;
 });
 
 internet.on('node-online', ({ id }) => {
@@ -44,12 +49,14 @@ internet.on('network-stopped', () => {
   console.log('\n[EVENT] Network has stopped.');
 });
 
-internet.on('message-routed', ({ originalSource, router, finalDestination, firstHop, secondHop }) => {
-  console.log(`\n[EVENT] Message routed: ${originalSource} → ${router} → ${finalDestination}`);
+internet.on('message-routed', ({ originalSource, finalDestination, path, messageId }) => {
+  console.log(`\n[EVENT] Message routed: ${originalSource} → ${path.join(' → ')} → ${finalDestination}`);
+  console.log(`Message ID: ${messageId}`);
 });
 
-internet.on('routing-error', ({ originalSource, router, finalDestination, error }) => {
-  console.log(`\n[EVENT] Routing error: ${originalSource} → ${router} → ${finalDestination}: ${error}`);
+internet.on('routing-error', ({ originalSource, currentNode, nextNode, finalDestination, error }) => {
+  console.log(`\n[EVENT] Routing error: ${originalSource} → ${currentNode} → ${nextNode} → ${finalDestination}`);
+  console.log(`Error: ${error}`);
 });
 
 // Create readline interface
@@ -198,8 +205,10 @@ const commands = {
       const message = messageParts.join(' ');
       
       try {
+        console.log(`Attempting to send routed message from ${from} to ${to}...`);
         const messageId = internet.sendRoutedMessage(from, to, { text: message });
-        console.log(`Routed message sent with ID: ${messageId}`);
+        console.log(`Routed message initiated with ID: ${messageId}`);
+        console.log('The message will be routed through the network. Check for routing events.');
       } catch (error) {
         console.log(`Error: ${error.message}`);
       }
@@ -355,7 +364,7 @@ const commands = {
       connectionsToMake.forEach(connInfo => {
         try {
           internet.connect(connInfo.source, connInfo.target);
-          console.log(`  Connection: ${connInfo.source} -> ${connInfo.target}`);
+          console.log(`  Connection: ${connInfo.source} <-> ${connInfo.target}`);
         } catch (error) {
           console.log(`  Error connecting ${connInfo.source} to ${connInfo.target}: ${error.message}`);
         }
@@ -365,13 +374,11 @@ const commands = {
       domainsToRegister.forEach(domainInfo => {
         try {
           const node = internet.nodes.get(domainInfo.nodeId);
-          if (node && !dns.domains.has(domainInfo.domain)) {
+          if (node) {
             dns.registerDomain(domainInfo.domain, domainInfo.nodeId, node.ip);
             console.log(`  Domain registered: ${domainInfo.domain} -> ${domainInfo.nodeId}`);
-          } else if (dns.domains.has(domainInfo.domain)) {
-            console.log(`  Domain already registered: ${domainInfo.domain}`);
-          } else if (!node) {
-            console.log(`  Cannot register domain ${domainInfo.domain}, node ${domainInfo.nodeId} not found.`);
+          } else {
+            console.log(`  Error registering domain ${domainInfo.domain}: Node ${domainInfo.nodeId} not found`);
           }
         } catch (error) {
           console.log(`  Error registering domain ${domainInfo.domain}: ${error.message}`);
@@ -390,6 +397,12 @@ const commands = {
           }
         }
       });
+
+      // Start the network if it's not already running
+      if (!internet.running) {
+        internet.start();
+        console.log('  Network started');
+      }
 
       console.log('\nBasic network topology setup process complete.');
     }
