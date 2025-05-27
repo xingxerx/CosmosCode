@@ -1,18 +1,18 @@
 // Import our test framework
-const { describe, test, expect, jest, beforeEach } = require('../../testing/test-framework');
+const { describe, test, expect } = require('../../testing/test-framework');
 
 // Create mock functions
 const mockRunCosmologicalSimulation = jest.fn();
 const mockRunPythonScript = jest.fn();
 
 // Mock dependencies
-const cosmologyService = {
+jest.mock('../cosmology', () => ({
   runCosmologicalSimulation: mockRunCosmologicalSimulation
-};
+}));
 
-const pythonBridge = {
+jest.mock('../python-bridge', () => ({
   runPythonScript: mockRunPythonScript
-};
+}));
 
 // Simplified integration service - COMPLETELY REWRITTEN
 function integratedAnalysis(medicalData, cosmologyParams) {

@@ -4,6 +4,10 @@ const { describe, test, expect } = require('../../testing/test-framework');
 // Mock dependencies
 const runPythonScript = jest.fn();
 
+jest.mock('../python-bridge', () => ({
+  runPythonScript
+}));
+
 // Create a simplified version of the simulation engine
 const runCosmologicalSimulation = async (parameters) => {
   try {

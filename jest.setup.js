@@ -1,7 +1,23 @@
 // Set up environment variables for testing
 process.env.NODE_ENV = 'test';
 
-// Add global test utilities or mocks here
+// Mock console.error to avoid cluttering test output
+const originalConsoleError = console.error;
+console.error = (...args) => {
+  if (process.env.DEBUG) {
+    originalConsoleError(...args);
+  }
+};
+
+// Mock console.log to avoid cluttering test output
+const originalConsoleLog = console.log;
+console.log = (...args) => {
+  if (process.env.DEBUG) {
+    originalConsoleLog(...args);
+  }
+};
+
+// Add any global test setup here
 global.testUtils = {
   createMockSimulation: () => ({
     id: 'test-sim-123',

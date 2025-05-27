@@ -1,99 +1,98 @@
 const path = require('path');
 const fs = require('fs').promises;
 const os = require('os');
+const { runPythonScript } = require('../python-bridge');
 
 /**
- * Simulation engine for cosmological simulations
+ * Run a cosmological simulation with the given parameters
+ * @param {Object} parameters - Simulation parameters
+ * @returns {Promise<Object>} - Simulation results
  */
-class SimulationEngine {
-  constructor() {
-    // Available simulation types
-    this.simulationTypes = [
-      'n-body',
-      'dark-matter',
-      'galaxy-formation',
-      'cosmic-expansion',
-      'structure-formation',
-      'cmb-fluctuations'
-    ];
+async function runCosmologicalSimulation(parameters) {
+  try {
+    // Prepare parameters
+    const simulationParams = {
+      ...parameters,
+      timestamp: Date.now()
+    };
     
-    // Complexity levels
-    this.complexityLevels = [
-      'low',
-      'medium',
-      'high',
-      'ultra'
-    ];
-  }
-  
-  /**
-   * Run a cosmological simulation
-   * @param {Object} parameters - Simulation parameters
-   * @returns {Object} - Simulation results
-   */
-  runCosmologicalSimulation(parameters = {}) {
-    const {
-      type = 'n-body',
-      complexity = 'medium',
-      particles = 1000,
-      iterations = 100,
-      hubbleConstant = 70,
-      omegaMatter = 0.3,
-      omegaDarkEnergy = 0.7,
-      redshift = 0
-    } = parameters;
+    // In a real implementation, we would call Python here
+    // For now, we'll generate mock results
+    const results = generateMockResults(
+      parameters.type || 'nbody',
+      parameters.complexity || 'medium',
+      parameters
+    );
     
-    console.log(`Running ${type} simulation with ${complexity} complexity`);
-    
-    // Generate mock simulation results based on parameters
-    const results = generateMockResults(type, complexity, parameters);
-    
+    // Return simulation results with metadata
     return {
-      id: `sim-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      type,
-      complexity,
-      parameters,
+      parameters: simulationParams,
       results,
-      status: 'completed',
-      createdAt: new Date().toISOString()
+      metadata: {
+        timestamp: new Date(),
+        version: '1.0.0'
+      }
     };
-  }
-  
-  // Helper function to generate mock results
-  function generateMockResults(type, complexity, parameters) {
-    // Generate appropriate mock data based on simulation type and complexity
-    const particleCount = parameters.particles || 1000;
-    const iterations = parameters.iterations || 100;
-    
-    return {
-      particles: particleCount,
-      iterations: iterations,
-      energy: Math.random() * parameters.omegaMatter || 0.3,
-      momentum: Math.random() * parameters.omegaDarkEnergy || 0.7,
-      timeElapsed: iterations * 0.1,
-      finalState: Array.from({ length: Math.min(10, particleCount) }, () => ({
-        position: [Math.random() * 100, Math.random() * 100, Math.random() * 100],
-        velocity: [Math.random() * 10 - 5, Math.random() * 10 - 5, Math.random() * 10 - 5],
-        mass: Math.random() * 100
-      }))
-    };
-  }
-  
-  /**
-   * Get available simulation types
-   * @returns {Array} - List of available simulation types
-   */
-  getSimulationTypes() {
-    return this.simulationTypes;
-  }
-  
-  /**
-   * Get available complexity levels
-   * @returns {Array} - List of available complexity levels
-   */
-  getComplexityLevels() {
-    return this.complexityLevels;
+  } catch (error) {
+    throw new Error(`Simulation failed: ${error.message}`);
   }
 }
 
-module.exports = new SimulationEngine();
+/**
+ * Helper function to generate mock results
+ * @param {string} type - Simulation type
+ * @param {string} complexity - Simulation complexity
+ * @param {Object} parameters - Simulation parameters
+ * @returns {Object} - Mock results
+ */
+function generateMockResults(type, complexity, parameters) {
+  // Generate appropriate mock data based on simulation type and complexity
+  const particleCount = parameters.particles || 1000;
+  const iterations = parameters.iterations || 100;
+  
+  // Scale particle count based on complexity
+  let scaleFactor = 1;
+  if (complexity === 'low') scaleFactor = 0.5;
+  if (complexity === 'high') scaleFactor = 2;
+  
+  const particles = Math.floor(particleCount * scaleFactor);
+  
+  // Generate different results based on simulation type
+  switch (type) {
+    case 'nbody':
+      return {
+        particles,
+        iterations,
+        energy: Math.random() * 0.5,
+        momentum: Math.random() * 0.8,
+        clusters: Math.floor(Math.random() * 10) + 1
+      };
+      
+    case 'dark-matter':
+      return {
+        particles,
+        iterations,
+        darkMatterDensity: Math.random() * 0.7,
+        structures: Math.floor(Math.random() * 5) + 1
+      };
+      
+    case 'expansion':
+      return {
+        particles,
+        iterations,
+        hubbleConstant: 67 + Math.random() * 6,
+        expansionRate: 0.5 + Math.random() * 0.5
+      };
+      
+    default:
+      return {
+        particles,
+        iterations,
+        generic: Math.random()
+      };
+  }
+}
+
+module.exports = {
+  runCosmologicalSimulation
+};
