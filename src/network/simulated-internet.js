@@ -189,68 +189,123 @@ class SimulatedInternet extends EventEmitter {
       return this.sendMessage(fromId, toId, message);
     }
     
-    // Find a path through the network (simple implementation)
-    // In a real router, this would use a routing algorithm like Dijkstra's
-    const routers = Array.from(this.nodes.entries())
-      .filter(([id, node]) => node.type === 'router' && node.status === 'online')
-      .map(([id]) => id);
+    // Find a path through the network using breadth-first search
+    const path = this._findPath(fromId, toId);
     
-    // Try to find a router connected to both source and target
-    for (const routerId of routers) {
-      const router = this.nodes.get(routerId);
-      if (source.connections.includes(routerId) && router.connections.includes(toId)) {
-        // Found a router that can connect source and target
-        console.log(`Routing message from ${fromId} to ${toId} through ${routerId}`);
-        
-        // First hop: source to router
-        let firstHopId;
-        try {
-          firstHopId = this.sendMessage(fromId, routerId, {
-            type: 'routed-message',
-            originalSource: fromId,
-            finalDestination: toId,
-            data: message
-          });
-        } catch (error) {
-          throw new Error(`Error in first hop: ${error.message}`);
-        }
-        
-        // Second hop: router to destination
-        // We need to schedule this to happen after the first hop completes
-        const connectionId = `${fromId}-${routerId}`;
-        const connection = this.connections.get(connectionId);
-        
-        if (!connection) {
-          throw new Error(`Connection ${connectionId} not found`);
-        }
-        
-        const deliveryTime = connection.latency + 10; // Add processing time
-        
+    if (!path || path.length < 2) {
+      throw new Error(`No route found between ${fromId} and ${toId}`);
+    }
+    
+    console.log(`Routing message from ${fromId} to ${toId} through path: ${path.join(' → ')}`);
+    
+    // Send the message through the path
+    let currentHopId = null;
+    
+    // First hop
+    try {
+      currentHopId = this.sendMessage(path[0], path[1], {
+        type: 'routed-message',
+        originalSource: fromId,
+        finalDestination: toId,
+        path: path,
+        currentHop: 1,
+        data: message
+      });
+    } catch (error) {
+      throw new Error(`Error in first hop: ${error.message}`);
+    }
+    
+    // Schedule subsequent hops
+    for (let i = 1; i < path.length - 1; i++) {
+      const currentNodeId = path[i];
+      const nextNodeId = path[i + 1];
+      
+      // Get connection for latency calculation
+      const connectionId = `${path[i-1]}-${currentNodeId}`;
+      const connection = this.connections.get(connectionId);
+      
+      if (!connection) {
+        console.error(`Warning: Connection ${connectionId} not found for latency calculation`);
+        continue;
+      }
+      
+      const hopDelay = connection.latency + 10; // Add processing time
+      
+      // Use closure to capture the current values
+      ((currentNodeId, nextNodeId, hopIndex) => {
         setTimeout(() => {
           try {
-            const secondHopId = this.sendMessage(routerId, toId, message);
-            this.emit('message-routed', { 
-              originalSource: fromId, 
-              router: routerId, 
-              finalDestination: toId,
-              firstHop: firstHopId,
-              secondHop: secondHopId
-            });
+            if (hopIndex === path.length - 2) {
+              // Last hop - deliver the original message
+              const finalHopId = this.sendMessage(currentNodeId, nextNodeId, message);
+              
+              this.emit('message-routed', {
+                originalSource: fromId,
+                finalDestination: toId,
+                path: path,
+                messageId: finalHopId
+              });
+            } else {
+              // Intermediate hop - forward the routing information
+              this.sendMessage(currentNodeId, nextNodeId, {
+                type: 'routed-message',
+                originalSource: fromId,
+                finalDestination: toId,
+                path: path,
+                currentHop: hopIndex + 1,
+                data: message
+              });
+            }
           } catch (error) {
             this.emit('routing-error', {
               originalSource: fromId,
-              router: routerId,
+              currentNode: currentNodeId,
+              nextNode: nextNodeId,
               finalDestination: toId,
               error: error.message
             });
           }
-        }, deliveryTime);
+        }, hopDelay);
+      })(currentNodeId, nextNodeId, i);
+    }
+    
+    return currentHopId; // Return ID of first hop
+  }
+
+  // Helper method to find a path between two nodes using BFS
+  _findPath(startId, endId) {
+    const visited = new Set();
+    const queue = [[startId]];
+    
+    while (queue.length > 0) {
+      const path = queue.shift();
+      const currentId = path[path.length - 1];
+      
+      if (currentId === endId) {
+        return path;
+      }
+      
+      if (!visited.has(currentId)) {
+        visited.add(currentId);
         
-        return firstHopId; // Return ID of first hop
+        const currentNode = this.nodes.get(currentId);
+        if (!currentNode) continue;
+        
+        for (const neighborId of currentNode.connections) {
+          const neighbor = this.nodes.get(neighborId);
+          
+          // Only consider online nodes and routers for intermediate hops
+          if (neighbor && 
+              (neighbor.status === 'online') && 
+              (neighborId === endId || neighbor.type === 'router')) {
+            const newPath = [...path, neighborId];
+            queue.push(newPath);
+          }
+        }
       }
     }
     
-    throw new Error(`No route found between ${fromId} and ${toId}`);
+    return null; // No path found
   }
 
   // Helper methods

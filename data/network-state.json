@@ -1,0 +1,92 @@
+{
+  "running": true,
+  "nodes": [
+    {
+      "id": "router-1",
+      "type": "router",
+      "ip": "192.168.217.11",
+      "status": "online",
+      "connections": [
+        "server-1",
+        "server-2",
+        "client-1",
+        "client-2"
+      ]
+    },
+    {
+      "id": "server-1",
+      "type": "server",
+      "ip": "192.168.66.235",
+      "status": "online",
+      "connections": [
+        "router-1"
+      ]
+    },
+    {
+      "id": "server-2",
+      "type": "server",
+      "ip": "192.168.236.71",
+      "status": "online",
+      "connections": [
+        "router-1"
+      ]
+    },
+    {
+      "id": "client-1",
+      "type": "client",
+      "ip": "192.168.23.31",
+      "status": "online",
+      "connections": [
+        "router-1"
+      ]
+    },
+    {
+      "id": "client-2",
+      "type": "client",
+      "ip": "192.168.250.200",
+      "status": "online",
+      "connections": [
+        "router-1"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "router-1-server-1",
+      "latency": 111,
+      "packetLoss": 0.01
+    },
+    {
+      "id": "router-1-server-2",
+      "latency": 138,
+      "packetLoss": 0.01
+    },
+    {
+      "id": "router-1-client-1",
+      "latency": 73,
+      "packetLoss": 0.01
+    },
+    {
+      "id": "router-1-client-2",
+      "latency": 24,
+      "packetLoss": 0.01
+    }
+  ],
+  "domains": [
+    {
+      "domain": "server1.cosmos",
+      "nodeId": "server-1",
+      "ip": "192.168.66.235"
+    },
+    {
+      "domain": "server2.cosmos",
+      "nodeId": "server-2",
+      "ip": "192.168.236.71"
+    }
+  ],
+  "stats": {
+    "messagesDelivered": 0,
+    "messagesLost": 0,
+    "totalLatency": 0
+  }
+}
