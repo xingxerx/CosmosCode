@@ -20,6 +20,9 @@ async function testSimulation() {
   try {
     console.log('Running test simulation...');
     
+    // Force test environment to use mock data
+    process.env.NODE_ENV = 'test';
+    
     const parameters = {
       type: 'nbody',
       particles: 1000,

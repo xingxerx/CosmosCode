@@ -25,6 +25,9 @@ if (isJest) {
   const originalRunPythonScript = pythonBridge.runPythonScript;
   // Replace with our mock for testing
   pythonBridge.runPythonScript = mockRunPythonScript;
+  
+  // Force test environment to use mock data
+  process.env.NODE_ENV = 'test';
 }
 
 // Simple test runner
