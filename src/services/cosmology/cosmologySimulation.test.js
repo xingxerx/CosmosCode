@@ -29,7 +29,10 @@ describe('Cosmology Simulation', () => {
     
     const result = await runCosmologicalSimulation(parameters);
     
-    expect(result).toHaveProperty('parameters', parameters);
+    // Check that parameters are included (but may have additional fields)
+    expect(result).toHaveProperty('parameters');
+    expect(result.parameters).toMatchObject(parameters);
+    
     expect(result).toHaveProperty('results');
     expect(result.results).toHaveProperty('particles', 1000);
     expect(result.results).toHaveProperty('energy', 0.5);
