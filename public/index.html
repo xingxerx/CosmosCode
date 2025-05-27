@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CosmosCode</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        button { padding: 10px; margin: 5px; cursor: pointer; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>CosmosCode API Tester</h1>
+    
+    <div>
+        <h2>Health Check</h2>
+        <button id="healthBtn">Check Health</button>
+        <pre id="healthResult">Results will appear here...</pre>
+    </div>
+    
+    <div>
+        <h2>Run Simulation</h2>
+        <button id="simBtn">Run Simulation</button>
+        <pre id="simResult">Results will appear here...</pre>
+    </div>
+    
+    <div>
+        <h2>Start Notebook</h2>
+        <button id="notebookBtn">Start Notebook</button>
+        <pre id="notebookResult">Results will appear here...</pre>
+    </div>
+
+    <script>
+        document.getElementById('healthBtn').addEventListener('click', async () => {
+            const response = await fetch('/api/health');
+            const data = await response.json();
+            document.getElementById('healthResult').textContent = JSON.stringify(data, null, 2);
+        });
+
+        document.getElementById('simBtn').addEventListener('click', async () => {
+            const response = await fetch('/api/simulations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    parameters: {
+                        type: 'nbody',
+                        complexity: 'medium',
+                        omegaMatter: 0.3,
+                        hubbleConstant: 70
+                    },
+                    generateVisualization: true
+                })
+            });
+            const data = await response.json();
+            document.getElementById('simResult').textContent = JSON.stringify(data, null, 2);
+        });
+
+        document.getElementById('notebookBtn').addEventListener('click', async () => {
+            const response = await fetch('/api/research/notebook/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            });
+            const data = await response.json();
+            document.getElementById('notebookResult').textContent = JSON.stringify(data, null, 2);
+        });
+    </script>
+</body>
+</html>

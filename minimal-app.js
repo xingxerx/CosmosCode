@@ -1,4 +1,4 @@
-// Main application entry point
+// Minimal application that doesn't depend on any external modules
 const express = require('express');
 const app = express();
 const port = process.env.PORT || 3000;
@@ -6,13 +6,8 @@ const port = process.env.PORT || 3000;
 // Middleware
 app.use(express.json());
 
-// Create logger if it doesn't exist
-const logger = {
-  info: (msg) => console.log(`[INFO] ${msg}`),
-  error: (msg) => console.error(`[ERROR] ${msg}`),
-  debug: (msg) => console.log(`[DEBUG] ${msg}`),
-  warn: (msg) => console.warn(`[WARN] ${msg}`)
-};
+// Serve static files from the public directory
+app.use(express.static('public'));
 
 // Basic routes
 app.get('/', (req, res) => {
@@ -55,6 +50,24 @@ app.post('/api/research/notebook/start', (req, res) => {
       token: 'mock-token-12345'
     }
   });
+});
+
+// Add a new endpoint for visualization
+app.post('/api/visualizations', (req, res) => {
+  console.log('Received visualization request:', req.body);
+  
+  // Mock response
+  setTimeout(() => {
+    res.status(201).json({
+      id: `viz-${Date.now()}`,
+      status: 'completed',
+      results: {
+        imageUrl: 'http://example.com/mock-image.png',
+        type: req.body.type || '3D',
+        dimensions: [800, 600]
+      }
+    });
+  }, 1500); // Simulate 1.5 second processing time
 });
 
 // Start server
