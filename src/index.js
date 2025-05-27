@@ -1,9 +1,11 @@
 // Main application entry point
 const express = require('express');
+const helmet = require('helmet'); // Import helmet
 const app = express();
 const port = process.env.PORT || 3000;
 
 // Middleware
+app.use(helmet()); // Use helmet middleware early in the stack
 app.use(express.json());
 
 // Create logger if it doesn't exist
