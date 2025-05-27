@@ -36,6 +36,14 @@ internet.on('network-stopped', () => {
   console.log('\n[EVENT] Network has stopped.');
 });
 
+internet.on('message-routed', ({ originalSource, router, finalDestination, firstHop, secondHop }) => {
+  console.log(`\n[EVENT] Message routed: ${originalSource} → ${router} → ${finalDestination}`);
+});
+
+internet.on('routing-error', ({ originalSource, router, finalDestination, error }) => {
+  console.log(`\n[EVENT] Routing error: ${originalSource} → ${router} → ${finalDestination}: ${error}`);
+});
+
 // Create readline interface
 const rl = readline.createInterface({
   input: process.stdin,
@@ -107,7 +115,7 @@ const commands = {
       
       try {
         internet.startNode(id);
-        console.log(`Node started: ${id}`);
+        // Event 'node-online' will provide feedback
       } catch (error) {
         console.log(`Error: ${error.message}`);
       }
@@ -125,7 +133,7 @@ const commands = {
       
       try {
         internet.stopNode(id);
-        console.log(`Node stopped: ${id}`);
+        // Event 'node-offline' will provide feedback
       } catch (error) {
         console.log(`Error: ${error.message}`);
       }

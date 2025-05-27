@@ -96,8 +96,14 @@ class SimulatedInternet extends EventEmitter {
     };
     
     // Simulate network conditions
-    const connectionId = `${fromId}-${toId}`;
-    const connection = this.connections.get(connectionId);
+    const connId1 = `${fromId}-${toId}`;
+    const connId2 = `${toId}-${fromId}`;
+    const connection = this.connections.get(connId1) || this.connections.get(connId2);
+
+    if (!connection) {
+      // This should ideally not be reached if the `source.connections.includes(toId)` check passed.
+      throw new Error(`Internal error: Connection object not found for link ${fromId}-${toId}.`);
+    }
     
     // Check for packet loss
     if (Math.random() < connection.packetLoss) {
@@ -192,28 +198,47 @@ class SimulatedInternet extends EventEmitter {
         console.log(`Routing message from ${fromId} to ${toId} through ${routerId}`);
         
         // First hop: source to router
-        const firstHopId = this.sendMessage(fromId, routerId, {
-          type: 'routed-message',
-          originalSource: fromId,
-          finalDestination: toId,
-          data: message
-        });
+        let firstHopId;
+        try {
+          firstHopId = this.sendMessage(fromId, routerId, {
+            type: 'routed-message',
+            originalSource: fromId,
+            finalDestination: toId,
+            data: message
+          });
+        } catch (error) {
+          throw new Error(`Error in first hop: ${error.message}`);
+        }
         
         // Second hop: router to destination
         // We need to schedule this to happen after the first hop completes
-        const routerNode = this.nodes.get(routerId);
-        const connection = this.connections.get(`${fromId}-${routerId}`);
+        const connectionId = `${fromId}-${routerId}`;
+        const connection = this.connections.get(connectionId);
+        
+        if (!connection) {
+          throw new Error(`Connection ${connectionId} not found`);
+        }
+        
         const deliveryTime = connection.latency + 10; // Add processing time
         
         setTimeout(() => {
-          const secondHopId = this.sendMessage(routerId, toId, message);
-          this.emit('message-routed', { 
-            originalSource: fromId, 
-            router: routerId, 
-            finalDestination: toId,
-            firstHop: firstHopId,
-            secondHop: secondHopId
-          });
+          try {
+            const secondHopId = this.sendMessage(routerId, toId, message);
+            this.emit('message-routed', { 
+              originalSource: fromId, 
+              router: routerId, 
+              finalDestination: toId,
+              firstHop: firstHopId,
+              secondHop: secondHopId
+            });
+          } catch (error) {
+            this.emit('routing-error', {
+              originalSource: fromId,
+              router: routerId,
+              finalDestination: toId,
+              error: error.message
+            });
+          }
         }, deliveryTime);
         
         return firstHopId; // Return ID of first hop
