@@ -7,15 +7,31 @@ class TopologyManager {
     this.internet = internet;
   }
 
-  // Create a star topology with one central node and multiple leaf nodes
+  /**
+   * Create a star topology with one central node and multiple leaf nodes.
+   * If the center node doesn't exist, it will be created.
+   * @param {string} centerNodeId - The ID for the central node.
+   * @param {number} leafCount - The number of leaf nodes to create and connect to the center.
+   * @param {object} [options={}] - Optional parameters.
+   * @param {string} [options.centerType='router'] - The type of the center node if it needs to be created.
+   * @param {string} [options.leafPrefix='node'] - The prefix for the IDs of the leaf nodes.
+   * @param {string} [options.leafType='client'] - The type of the leaf nodes.
+   * @returns {{center: object, leaves: object[]}} An object containing the center node and an array of the created leaf nodes.
+   */
   createStarTopology(centerNodeId, leafCount, options = {}) {
+    const {
+      centerType = 'router',
+      leafPrefix = 'node',
+      leafType = 'client'
+    } = options;
+
     const centerNode = this.internet.nodes.get(centerNodeId) || 
-                      this.internet.createNode(centerNodeId, options.centerType || 'router');
+                      this.internet.createNode(centerNodeId, centerType);
     
     const leafNodes = [];
     for (let i = 0; i < leafCount; i++) {
-      const leafId = `${options.leafPrefix || 'node'}-${i + 1}`;
-      const leafNode = this.internet.createNode(leafId, options.leafType || 'client');
+      const leafId = `${leafPrefix}-${i + 1}`;
+      const leafNode = this.internet.createNode(leafId, leafType);
       this.internet.connect(centerNodeId, leafId);
       leafNodes.push(leafNode);
     }
@@ -26,14 +42,26 @@ class TopologyManager {
     };
   }
 
-  // Create a mesh topology where each node connects to every other node
+  /**
+   * Create a mesh topology where each node connects to every other node.
+   * @param {number} nodeCount - The total number of nodes to create in the mesh.
+   * @param {object} [options={}] - Optional parameters.
+   * @param {string} [options.nodePrefix='mesh-node'] - The prefix for the IDs of the nodes.
+   * @param {string} [options.nodeType='peer'] - The type of the nodes.
+   * @returns {object[]} An array of the created nodes.
+   */
   createMeshTopology(nodeCount, options = {}) {
+    const {
+      nodePrefix = 'mesh-node',
+      nodeType = 'peer'
+    } = options;
+
     const nodes = [];
     
     // Create nodes
     for (let i = 0; i < nodeCount; i++) {
-      const nodeId = `${options.nodePrefix || 'mesh-node'}-${i + 1}`;
-      const node = this.internet.createNode(nodeId, options.nodeType || 'peer');
+      const nodeId = `${nodePrefix}-${i + 1}`;
+      const node = this.internet.createNode(nodeId, nodeType);
       nodes.push(node);
     }
     
@@ -47,14 +75,26 @@ class TopologyManager {
     return nodes;
   }
 
-  // Create a ring topology where each node connects to its neighbors
+  /**
+   * Create a ring topology where each node connects to its two immediate neighbors.
+   * @param {number} nodeCount - The total number of nodes to create in the ring.
+   * @param {object} [options={}] - Optional parameters.
+   * @param {string} [options.nodePrefix='ring-node'] - The prefix for the IDs of the nodes.
+   * @param {string} [options.nodeType='peer'] - The type of the nodes.
+   * @returns {object[]} An array of the created nodes.
+   */
   createRingTopology(nodeCount, options = {}) {
+    const {
+      nodePrefix = 'ring-node',
+      nodeType = 'peer'
+    } = options;
+
     const nodes = [];
     
     // Create nodes
     for (let i = 0; i < nodeCount; i++) {
-      const nodeId = `${options.nodePrefix || 'ring-node'}-${i + 1}`;
-      const node = this.internet.createNode(nodeId, options.nodeType || 'peer');
+      const nodeId = `${nodePrefix}-${i + 1}`;
+      const node = this.internet.createNode(nodeId, nodeType);
       nodes.push(node);
     }
     
@@ -80,8 +120,14 @@ class TopologyManager {
    * @returns {{root: object, children: object[]}} An object containing the root node and an array of its direct children.
    */
   createTreeTopology(rootId, depth, branchingFactor, options = {}) {
+    const {
+      rootType = 'router',
+      leafType = 'client',
+      nodeType = 'router' // Intermediate node type
+    } = options;
+
     const rootNode = this.internet.nodes.get(rootId) || 
-                    this.internet.createNode(rootId, options.rootType || 'router');
+                    this.internet.createNode(rootId, rootType);
     
     const createChildren = (parentId, currentDepth) => {
       if (currentDepth >= depth) {
@@ -92,8 +138,8 @@ class TopologyManager {
       for (let i = 0; i < branchingFactor; i++) {
         const childId = `${parentId}-${i + 1}`;
         const childType = currentDepth === depth - 1 ? 
-                         (options.leafType || 'client') : 
-                         (options.nodeType || 'router');
+                         leafType : 
+                         nodeType;
         
         const childNode = this.internet.createNode(childId, childType);
         this.internet.connect(parentId, childId);
