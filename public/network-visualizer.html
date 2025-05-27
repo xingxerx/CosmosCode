@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CosmosCode Network Visualizer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .header {
+      background-color: #333;
+      color: white;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    .card {
+      background-color: white;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .network-map {
+      height: 400px;
+      border: 1px solid #ddd;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .node {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #4CAF50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .node.router { background-color: #2196F3; }
+    .node.server { background-color: #9C27B0; }
+    .node.client { background-color: #4CAF50; }
+    .node.offline { opacity: 0.5; }
+    .connection {
+      position: absolute;
+      height: 2px;
+      background-color: #999;
+      transform-origin: 0 0;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 8px 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>CosmosCode Network Visualizer</h1>
+      <p>Simulated Internet Monitoring Tool</p>
+    </div>
+    
+    <div class="card">
+      <h2>Network Controls</h2>
+      <div class="controls">
+        <button id="start-network">Start Network</button>
+        <button id="stop-network">Stop Network</button>
+        <button id="add-node">Add Node</button>
+        <button id="add-connection">Add Connection</button>
+        <button id="refresh">Refresh</button>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h2>Network Map</h2>
+      <div id="network-map" class="network-map"></div>
+    </div>
+    
+    <div class="card">
+      <h2>Network Statistics</h2>
+      <div id="network-stats">
+        <table>
+          <tr>
+            <th>Active Nodes</th>
+            <td id="active-nodes">0</td>
+            <th>Messages Delivered</th>
+            <td id="messages-delivered">0</td>
+          </tr>
+          <tr>
+            <th>Total Nodes</th>
+            <td id="total-nodes">0</td>
+            <th>Messages Lost</th>
+            <td id="messages-lost">0</td>
+          </tr>
+          <tr>
+            <th>Connections</th>
+            <td id="connections">0</td>
+            <th>Average Latency</th>
+            <td id="avg-latency">0 ms</td>
+          </tr>
+          <tr>
+            <th>Bandwidth Used</th>
+            <td id="bandwidth">0 KB</td>
+            <th>Packet Loss Rate</th>
+            <td id="packet-loss">0%</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h2>Nodes</h2>
+      <table id="nodes-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Type</th>
+            <th>IP</th>
+            <th>Status</th>
+            <th>Connections</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Nodes will be added here -->
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="card">
+      <h2>DNS Records</h2>
+      <table id="dns-table">
+        <thead>
+          <tr>
+            <th>Domain</th>
+            <th>IP</th>
+            <th>Node</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- DNS records will be added here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // Fetch network data
+    async function fetchNetworkData() {
+      try {
+        const [statusRes, nodesRes, dnsRes] = await Promise.all([
+          fetch('/api/network/status'),
+          fetch('/api/network/nodes'),
+          fetch('/api/network/dns')
+        ]);
+        
+        const status = await statusRes.json();
+        const nodes = await nodesRes.json();
+        const dns = await dnsRes.json();
+        
+        updateNetworkStats(status);
+        updateNodesTable(nodes);
+        updateDnsTable(dns);
+        updateNetworkMap(nodes, status);

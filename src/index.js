@@ -4,6 +4,11 @@ const helmet = require('helmet'); // Import helmet
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Import simulated internet components
+const SimulatedInternet = require('./network/simulated-internet');
+const DNSService = require('./network/dns-service');
+const NetworkMonitor = require('./network/network-monitor');
+
 // Middleware
 app.use(helmet()); // Use helmet middleware early in the stack
 app.use(express.json());
@@ -16,6 +21,11 @@ const logger = {
   warn: (msg) => console.warn(`[WARN] ${msg}`)
 };
 
+// Initialize simulated internet
+const simulatedInternet = new SimulatedInternet();
+const dnsService = new DNSService();
+const networkMonitor = new NetworkMonitor(simulatedInternet);
+
 // Basic routes
 app.get('/', (req, res) => {
   res.send('CosmosCode API is running');
@@ -25,41 +35,41 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Mock simulation endpoint
-app.post('/api/simulations', (req, res) => {
-  console.log('Received simulation request:', req.body);
-  
-  // Mock response
-  setTimeout(() => {
-    res.status(201).json({
-      id: `sim-${Date.now()}`,
-      status: 'completed',
-      results: {
-        particles: 1000,
-        iterations: 100,
-        energy: 0.3,
-        momentum: 0.7
-      }
-    });
-  }, 2000); // Simulate 2 second processing time
+// Simulated internet routes
+app.get('/api/network/status', (req, res) => {
+  res.json(networkMonitor.getNetworkStats());
 });
 
-// Mock notebook endpoint
-app.post('/api/research/notebook/start', (req, res) => {
-  console.log('Received notebook start request:', req.body);
+app.get('/api/network/nodes', (req, res) => {
+  const nodes = Array.from(simulatedInternet.nodes.entries()).map(([id, node]) => ({
+    id,
+    type: node.type,
+    ip: node.ip,
+    status: node.status,
+    connections: node.connections.length
+  }));
   
-  // Mock response
+  res.json({ nodes });
+});
+
+app.get('/api/network/dns', (req, res) => {
   res.json({
-    success: true,
-    server: {
-      url: 'http://localhost:8888/?token=mock-token-12345',
-      port: 8888,
-      token: 'mock-token-12345'
-    }
+    domains: dnsService.listDomains()
   });
+});
+
+app.post('/api/network/start', (req, res) => {
+  simulatedInternet.start();
+  res.json({ status: 'started' });
+});
+
+app.post('/api/network/stop', (req, res) => {
+  simulatedInternet.stop();
+  res.json({ status: 'stopped' });
 });
 
 // Start server
 app.listen(port, () => {
-  console.log(`CosmosCode server running at http://localhost:${port}`);
+  logger.info(`CosmosCode server running at http://localhost:${port}`);
+  logger.info('Simulated internet available at /api/network endpoints');
 });
