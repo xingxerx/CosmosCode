@@ -1,18 +1,19 @@
 // Import our test framework
 const { describe, test, expect } = require('../../testing/test-framework');
 
-// Mock dependencies
-const runPythonScript = jest.fn();
+// Create a mock function
+const mockRunPythonScript = jest.fn();
 
+// Mock dependencies
 jest.mock('../python-bridge', () => ({
-  runPythonScript
+  runPythonScript: mockRunPythonScript
 }));
 
 // Create a simplified version of the simulation engine
 const runCosmologicalSimulation = async (parameters) => {
   try {
     // Run simulation
-    const output = await runPythonScript('simulation.py', [JSON.stringify(parameters)]);
+    const output = await mockRunPythonScript('simulation.py', [JSON.stringify(parameters)]);
     
     // Parse results
     const results = JSON.parse(output);
@@ -33,7 +34,7 @@ const runCosmologicalSimulation = async (parameters) => {
 // Tests
 describe('Simulation Engine', () => {
   test('should run a simulation with parameters', async () => {
-    runPythonScript.mockResolvedValue(JSON.stringify({
+    mockRunPythonScript.mockResolvedValue(JSON.stringify({
       energy: 0.3,
       particles: 1000
     }));

@@ -1,33 +1,32 @@
 const request = require('supertest');
-const app = require('../../app');
+const express = require('express');
+const routes = require('../../api/routes');
+
+// Create a test app
+const app = express();
+app.use(express.json());
+app.use('/api', routes);
 
 describe('Simulation to Visualization Integration', () => {
-  let simulationId;
-  
-  // First create a simulation
-  beforeAll(async () => {
-    const response = await request(app)
+  test('can create visualization from simulation', async () => {
+    // First create a simulation
+    const simResponse = await request(app)
       .post('/api/simulations')
       .send({
-        parameters: {
-          type: 'n-body',
-          complexity: 'low',
-          particles: 100
-        }
+        type: 'n-body',
+        particles: 1000,
+        iterations: 100
       });
     
-    simulationId = response.body.id;
-  });
-  
-  test('can create visualization from simulation', async () => {
-    // Create a visualization based on the simulation
+    expect(simResponse.statusCode).toBe(201);
+    const simulationId = simResponse.body.id;
+    
+    // Then create a visualization from the simulation
     const response = await request(app)
       .post('/api/visualizations')
       .send({
-        simulationData: simulationId,
-        type: 'particle-distribution',
-        colorMap: 'viridis',
-        dimensions: [800, 600]
+        simulationId,
+        type: '3d'
       });
     
     expect(response.statusCode).toBe(201);

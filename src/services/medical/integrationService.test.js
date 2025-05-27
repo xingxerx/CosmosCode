@@ -1,6 +1,7 @@
 const { integratedAnalysis } = require('./integrationService');
 const cosmologyService = require('../cosmology');
 const { runPythonScript } = require('../pythonBridge');
+const fs = require('fs').promises;
 
 // Mock dependencies
 jest.mock('../cosmology', () => ({
@@ -18,6 +19,13 @@ jest.mock('fs', () => ({
     mkdir: jest.fn().mockResolvedValue(undefined)
   }
 }));
+
+// Mock logger to avoid errors
+jest.mock('../../utils/logger', () => ({
+  error: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn()
+}), { virtual: true });
 
 describe('Medical Integration Service', () => {
   beforeEach(() => {
@@ -62,8 +70,12 @@ describe('Medical Integration Service', () => {
   });
   
   test('should handle errors during integration', async () => {
-    runPythonScript.mockRejectedValue(new Error('Integration failed'));
+    // Mock an error in the cosmology simulation
+    cosmologyService.runCosmologicalSimulation.mockRejectedValue(
+      new Error('Simulation failed')
+    );
     
+    // Expect the function to throw an error
     await expect(integratedAnalysis({}, {}))
       .rejects
       .toThrow('Cross-disciplinary analysis failed');

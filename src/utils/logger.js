@@ -1,9 +1,30 @@
 /**
- * Simple logger implementation
+ * Logger utility
  */
-module.exports = {
-  info: (msg) => console.log(`[INFO] ${msg}`),
-  error: (msg) => console.error(`[ERROR] ${msg}`),
-  debug: (msg) => console.log(`[DEBUG] ${msg}`),
-  warn: (msg) => console.warn(`[WARN] ${msg}`)
+const logger = {
+  info: (message) => {
+    if (process.env.NODE_ENV !== 'test') {
+      console.log(`[INFO] ${message}`);
+    }
+  },
+  
+  error: (message) => {
+    if (process.env.NODE_ENV !== 'test') {
+      console.error(`[ERROR] ${message}`);
+    }
+  },
+  
+  debug: (message) => {
+    if (process.env.NODE_ENV !== 'test' && process.env.DEBUG) {
+      console.log(`[DEBUG] ${message}`);
+    }
+  },
+  
+  warn: (message) => {
+    if (process.env.NODE_ENV !== 'test') {
+      console.warn(`[WARN] ${message}`);
+    }
+  }
 };
+
+module.exports = logger;

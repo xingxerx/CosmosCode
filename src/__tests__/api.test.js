@@ -1,5 +1,11 @@
 const request = require('supertest');
-const app = require('../app'); // Assuming you have your Express app exported from app.js
+const express = require('express');
+const routes = require('../api/routes');
+
+// Create a test app
+const app = express();
+app.use(express.json());
+app.use('/api', routes);
 
 describe('API Endpoints', () => {
   test('GET /api/health returns 200', async () => {
@@ -11,13 +17,7 @@ describe('API Endpoints', () => {
   test('POST /api/simulations creates a new simulation', async () => {
     const response = await request(app)
       .post('/api/simulations')
-      .send({
-        parameters: {
-          type: 'n-body',
-          complexity: 'low',
-          particles: 100
-        }
-      });
+      .send({ type: 'n-body', particles: 1000 });
     
     expect(response.statusCode).toBe(201);
     expect(response.body.id).toBeDefined();

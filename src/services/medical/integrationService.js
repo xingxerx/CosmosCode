@@ -1,18 +1,20 @@
 const path = require('path');
-const fs = require('fs').promises;
 const os = require('os');
+const fs = require('fs').promises;
+const cosmologyService = require('../cosmology');
+const { runPythonScript } = require('../pythonBridge');
 const logger = require('../../utils/logger');
-const cosmologyService = require('../cosmology/simulationEngine');
-const { runPythonScript } = require('../python-bridge');
 
 /**
  * Performs integrated analysis between medical and cosmological data
- * @param {Object} medicalData - Patient medical data
+ * @param {Object} medicalData - Medical data to analyze
  * @param {Object} cosmologyParams - Parameters for cosmological simulation
- * @returns {Object} - Integrated analysis results
+ * @returns {Promise<Object>} - Integrated analysis results
  */
 async function integratedAnalysis(medicalData, cosmologyParams) {
-  logger.info('Starting integrated cosmology-medical analysis');
+  if (!medicalData) {
+    throw new Error('Medical data is required');
+  }
   
   try {
     // Run cosmological simulation

@@ -14,6 +14,7 @@ class SimulatedInternet extends EventEmitter {
     // Network properties
     this.packetLoss = options.packetLoss || 0.05; // 5% packet loss by default
     this.bandwidth = options.bandwidth || 1000; // 1000 KB/s by default
+    this.latency = options.latency || { min: 20, max: 200 }; // Latency range in ms
     this.running = false;
     
     // Statistics
@@ -276,7 +277,8 @@ class SimulatedInternet extends EventEmitter {
 
   // Calculate random latency within the configured range
   _calculateLatency() {
-    const { min, max } = this.latency;
+    const min = this.latency.min || 20;
+    const max = this.latency.max || 200;
     return Math.floor(min + Math.random() * (max - min));
   }
 
