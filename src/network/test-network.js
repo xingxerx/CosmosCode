@@ -16,6 +16,8 @@ internet.createNode('client-1', 'client');
 // Connect them
 internet.connect('router-1', 'server-1');
 internet.connect('router-1', 'client-1');
+// Option 1: Add direct connection between client and server
+internet.connect('client-1', 'server-1');
 
 // Register a domain
 dns.registerDomain('test.cosmos', 'server-1', internet.nodes.get('server-1').ip);
@@ -45,7 +47,7 @@ console.log(dns.listDomains());
 
 // Send a test message
 console.log('\nSending test message...');
-const messageId = internet.sendMessage('client-1', 'server-1', {
+const messageId = internet.sendRoutedMessage('client-1', 'server-1', {
   type: 'request',
   method: 'GET',
   path: '/',

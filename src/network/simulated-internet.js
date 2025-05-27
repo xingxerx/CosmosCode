@@ -159,6 +159,70 @@ class SimulatedInternet extends EventEmitter {
     return this;
   }
 
+  // Send a message with routing through intermediate nodes if needed
+  sendRoutedMessage(fromId, toId, message) {
+    const source = this.nodes.get(fromId);
+    const target = this.nodes.get(toId);
+    
+    if (!source || !target) {
+      throw new Error('Source or target node not found');
+    }
+    
+    if (source.status === 'offline') {
+      throw new Error('Source node is offline');
+    }
+    
+    // Check if nodes are directly connected
+    if (source.connections.includes(toId)) {
+      // Direct connection exists, use regular sendMessage
+      return this.sendMessage(fromId, toId, message);
+    }
+    
+    // Find a path through the network (simple implementation)
+    // In a real router, this would use a routing algorithm like Dijkstra's
+    const routers = Array.from(this.nodes.entries())
+      .filter(([id, node]) => node.type === 'router' && node.status === 'online')
+      .map(([id]) => id);
+    
+    // Try to find a router connected to both source and target
+    for (const routerId of routers) {
+      const router = this.nodes.get(routerId);
+      if (source.connections.includes(routerId) && router.connections.includes(toId)) {
+        // Found a router that can connect source and target
+        console.log(`Routing message from ${fromId} to ${toId} through ${routerId}`);
+        
+        // First hop: source to router
+        const firstHopId = this.sendMessage(fromId, routerId, {
+          type: 'routed-message',
+          originalSource: fromId,
+          finalDestination: toId,
+          data: message
+        });
+        
+        // Second hop: router to destination
+        // We need to schedule this to happen after the first hop completes
+        const routerNode = this.nodes.get(routerId);
+        const connection = this.connections.get(`${fromId}-${routerId}`);
+        const deliveryTime = connection.latency + 10; // Add processing time
+        
+        setTimeout(() => {
+          const secondHopId = this.sendMessage(routerId, toId, message);
+          this.emit('message-routed', { 
+            originalSource: fromId, 
+            router: routerId, 
+            finalDestination: toId,
+            firstHop: firstHopId,
+            secondHop: secondHopId
+          });
+        }, deliveryTime);
+        
+        return firstHopId; // Return ID of first hop
+      }
+    }
+    
+    throw new Error(`No route found between ${fromId} and ${toId}`);
+  }
+
   // Helper methods
   _generateIP() {
     return `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
