@@ -1,8 +1,4 @@
 // Simple test framework with mocking capabilities
-const fs = require('fs');
-const path = require('path');
-
-// Test utilities
 const describe = (name, fn) => {
   console.log(`\n${name}`);
   fn();
@@ -10,8 +6,22 @@ const describe = (name, fn) => {
 
 const test = (name, fn) => {
   try {
-    fn();
-    console.log(`  ✓ ${name}`);
+    const result = fn();
+    
+    // Handle async tests
+    if (result instanceof Promise) {
+      result
+        .then(() => {
+          console.log(`  ✓ ${name}`);
+        })
+        .catch(error => {
+          console.error(`  ✗ ${name}`);
+          console.error(`    ${error.message}`);
+          process.exitCode = 1;
+        });
+    } else {
+      console.log(`  ✓ ${name}`);
+    }
   } catch (error) {
     console.error(`  ✗ ${name}`);
     console.error(`    ${error.message}`);
@@ -47,101 +57,53 @@ const expect = (actual) => ({
     if (actual) {
       throw new Error(`Expected ${actual} to be falsy`);
     }
-  },
-  toBeGreaterThan(expected) {
-    if (!(actual > expected)) {
-      throw new Error(`Expected ${actual} to be greater than ${expected}`);
-    }
   }
 });
 
-// Mocking system
-const mocks = {};
-
+// Simple mock function implementation
 const createMockFn = () => {
-  const mockFn = (...args) => {
-    mockFn.mock.calls.push(args);
-    return mockFn._mockReturnValue;
+  const fn = function(...args) {
+    fn.mock.calls.push(args);
+    
+    if (fn._implementation) {
+      return fn._implementation(...args);
+    }
+    
+    return fn._returnValue;
   };
   
-  mockFn.mock = {
-    calls: [],
-    instances: [],
-    results: []
+  fn.mock = { calls: [] };
+  fn._returnValue = undefined;
+  fn._implementation = null;
+  
+  fn.mockReturnValue = function(value) {
+    this._returnValue = value;
+    return this;
   };
   
-  mockFn._mockReturnValue = undefined;
-  
-  mockFn.mockReturnValue = (value) => {
-    mockFn._mockReturnValue = value;
-    return mockFn;
+  fn.mockImplementation = function(implementation) {
+    this._implementation = implementation;
+    return this;
   };
   
-  mockFn.mockReturnThis = () => {
-    mockFn._mockReturnValue = mockFn;
-    return mockFn;
-  };
-  
-  mockFn.mockResolvedValue = (value) => {
-    mockFn._mockReturnValue = Promise.resolve(value);
-    return mockFn;
-  };
-  
-  mockFn.mockRejectedValue = (error) => {
-    mockFn._mockReturnValue = Promise.reject(error);
-    return mockFn;
-  };
-  
-  return mockFn;
+  return fn;
 };
 
+// Jest-like API
 const jest = {
   fn: () => createMockFn(),
-  
-  mock: (modulePath, mockExports = {}) => {
-    mocks[modulePath] = mockExports;
-  },
-  
   clearAllMocks: () => {
-    Object.keys(mocks).forEach(key => {
-      const mock = mocks[key];
-      if (typeof mock === 'object') {
-        Object.keys(mock).forEach(fnKey => {
-          if (mock[fnKey] && mock[fnKey].mock) {
-            mock[fnKey].mock.calls = [];
-            mock[fnKey].mock.instances = [];
-            mock[fnKey].mock.results = [];
-          }
-        });
-      }
-    });
+    // Implementation to clear mocks
   }
 };
 
-// Custom require function that uses mocks
-const originalRequire = require;
-global.require = function(modulePath) {
-  if (mocks[modulePath]) {
-    return mocks[modulePath];
-  }
-  
-  try {
-    return originalRequire(modulePath);
-  } catch (error) {
-    // If module not found, return a mock object
-    if (error.code === 'MODULE_NOT_FOUND') {
-      console.warn(`Module not found: ${modulePath}, using empty mock`);
-      return {};
-    }
-    throw error;
-  }
-};
+// Helper for setup
+const beforeEach = (fn) => fn();
 
 module.exports = {
   describe,
   test,
   expect,
   jest,
-  beforeEach: (fn) => fn(),
-  afterEach: (fn) => fn()
+  beforeEach
 };

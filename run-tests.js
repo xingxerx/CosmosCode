@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { spawn } = require('child_process');
 
 console.log('Simple test runner');
 console.log('==================');
@@ -13,21 +13,36 @@ console.log(`Found ${testFiles.length} test files`);
 let passed = 0;
 let failed = 0;
 
-testFiles.forEach(file => {
-  try {
-    console.log(`Running ${file}...`);
-    execSync(`node ${file}`, { stdio: 'inherit' });
-    console.log(`✅ ${file} passed`);
-    passed++;
-  } catch (error) {
-    console.error(`❌ ${file} failed`);
-    failed++;
-  }
-});
+// Run tests sequentially
+runTests(testFiles, 0);
 
-console.log('==================');
-console.log(`Results: ${passed} passed, ${failed} failed`);
-process.exit(failed > 0 ? 1 : 0);
+function runTests(files, index) {
+  if (index >= files.length) {
+    // All tests completed
+    console.log('==================');
+    console.log(`Results: ${passed} passed, ${failed} failed`);
+    process.exit(failed > 0 ? 1 : 0);
+    return;
+  }
+  
+  const file = files[index];
+  console.log(`Running ${file}...`);
+  
+  const nodeProcess = spawn('node', [file], { stdio: 'inherit' });
+  
+  nodeProcess.on('close', (code) => {
+    if (code === 0) {
+      console.log(`✅ ${file} passed`);
+      passed++;
+    } else {
+      console.error(`❌ ${file} failed`);
+      failed++;
+    }
+    
+    // Run next test
+    runTests(files, index + 1);
+  });
+}
 
 // Helper function to find test files
 function findTestFiles(dir, pattern = '.test.js') {
