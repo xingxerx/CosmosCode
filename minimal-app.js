@@ -528,7 +528,7 @@ module.exports = new VisualizationService();
 
 // Import services
 const cosmologySimulationEngine = require('./services/cosmology/simulationEngine');
-const visualizationService = require('./services/visualization/visualizationService');
+const visualizationRenderer = require('./services/visualization/visualizationService');
 const logger = require('./utils/logger');
 
 // In-memory storage for simulations and visualizations
