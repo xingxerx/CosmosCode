@@ -48,3 +48,12 @@ If the CI/CD pipeline is failing:
    ```bash
    npm ci
    ```
+
+### Benchmark Issues
+
+1. **Negative Runtime Values**: If you see negative runtime values in the benchmark output, this is likely due to a system clock adjustment or NTP sync during the test. The benchmark script automatically converts these to absolute values, but you may want to run the benchmark again for more accurate results.
+
+2. **Inconsistent Results**: If benchmark results vary significantly between runs, try:
+   - Closing other applications to reduce system load
+   - Running the benchmark multiple times and taking the average
+   - Increasing the number of runs in the benchmark script by modifying the `RUNS` variable

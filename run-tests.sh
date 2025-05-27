@@ -13,4 +13,7 @@ if [ "$1" != "--with-e2e" ]; then
 fi
 
 # Run Jest with proper configuration
-npx jest --config=jest.config.js --testPathIgnorePatterns="/node_modules/" "/src/services/cosmology/test.js"
+npx jest --config=jest.config.js --testPathIgnorePatterns="/node_modules/" "/src/services/cosmology/test.js" --runInBand
+
+# Print completion message
+echo "Tests completed"

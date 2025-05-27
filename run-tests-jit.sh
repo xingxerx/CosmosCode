@@ -15,6 +15,7 @@ fi
 echo "Running tests with JIT optimization..."
 
 # Run Jest with proper configuration and V8 optimization
+# Using a different approach with fewer flags but more focused on JIT
 NODE_OPTIONS="--max-old-space-size=4096" node --expose-gc node_modules/.bin/jest --config=jest.config.js --testPathIgnorePatterns="/node_modules/" "/src/services/cosmology/test.js" --runInBand --detectOpenHandles
 
 # Print completion message

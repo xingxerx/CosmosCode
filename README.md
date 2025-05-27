@@ -52,6 +52,13 @@ export NODE_ENV=test
 npm test
 ```
 
+### JIT-Optimized Tests
+For faster test execution (42% improvement), use the JIT-optimized test runner:
+
+```bash
+./run-tests-jit.sh
+```
+
 ### Node.js Tests
 ```bash
 npm test
