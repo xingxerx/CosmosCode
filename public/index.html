@@ -5,65 +5,258 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CosmosCode</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        button { padding: 10px; margin: 5px; cursor: pointer; }
-        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; }
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2980b9;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button { 
+            padding: 10px 15px; 
+            margin: 5px; 
+            cursor: pointer; 
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        pre { 
+            background: #f8f9fa; 
+            padding: 10px; 
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            overflow-x: auto;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .loading {
+            display: none;
+            color: #3498db;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
     <h1>CosmosCode API Tester</h1>
     
-    <div>
+    <div class="card">
         <h2>Health Check</h2>
         <button id="healthBtn">Check Health</button>
+        <div class="loading" id="healthLoading">Checking health...</div>
         <pre id="healthResult">Results will appear here...</pre>
     </div>
     
-    <div>
+    <div class="card">
         <h2>Run Simulation</h2>
+        
+        <div class="form-group">
+            <label for="simType">Simulation Type:</label>
+            <select id="simType">
+                <option value="nbody">N-Body</option>
+                <option value="dark-matter">Dark Matter</option>
+                <option value="galaxy-formation">Galaxy Formation</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="complexity">Complexity:</label>
+            <select id="complexity">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="omegaMatter">Omega Matter:</label>
+            <input type="number" id="omegaMatter" value="0.3" step="0.1" min="0" max="1">
+        </div>
+        
+        <div class="form-group">
+            <label for="hubbleConstant">Hubble Constant:</label>
+            <input type="number" id="hubbleConstant" value="70" step="1" min="50" max="100">
+        </div>
+        
+        <div class="form-group">
+            <label>
+                <input type="checkbox" id="generateViz" checked>
+                Generate Visualization
+            </label>
+        </div>
+        
         <button id="simBtn">Run Simulation</button>
+        <div class="loading" id="simLoading">Running simulation (this may take a few seconds)...</div>
         <pre id="simResult">Results will appear here...</pre>
     </div>
     
-    <div>
+    <div class="card">
         <h2>Start Notebook</h2>
-        <button id="notebookBtn">Start Notebook</button>
+        <button id="notebookBtn">Start Jupyter Notebook</button>
+        <div class="loading" id="notebookLoading">Starting notebook server...</div>
         <pre id="notebookResult">Results will appear here...</pre>
+    </div>
+    
+    <div class="card">
+        <h2>Generate Visualization</h2>
+        
+        <div class="form-group">
+            <label for="vizType">Visualization Type:</label>
+            <select id="vizType">
+                <option value="3D">3D Rendering</option>
+                <option value="2D">2D Projection</option>
+                <option value="heatmap">Density Heatmap</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="resolution">Resolution:</label>
+            <select id="resolution">
+                <option value="low">Low (800x600)</option>
+                <option value="medium" selected>Medium (1280x720)</option>
+                <option value="high">High (1920x1080)</option>
+            </select>
+        </div>
+        
+        <button id="vizBtn">Generate Visualization</button>
+        <div class="loading" id="vizLoading">Generating visualization...</div>
+        <pre id="vizResult">Results will appear here...</pre>
     </div>
 
     <script>
+        // Helper function to show/hide loading indicators
+        function showLoading(elementId, show) {
+            document.getElementById(elementId).style.display = show ? 'block' : 'none';
+        }
+        
+        // Health check
         document.getElementById('healthBtn').addEventListener('click', async () => {
-            const response = await fetch('/api/health');
-            const data = await response.json();
-            document.getElementById('healthResult').textContent = JSON.stringify(data, null, 2);
+            showLoading('healthLoading', true);
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                document.getElementById('healthResult').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('healthResult').textContent = `Error: ${error.message}`;
+            } finally {
+                showLoading('healthLoading', false);
+            }
         });
 
+        // Run simulation
         document.getElementById('simBtn').addEventListener('click', async () => {
-            const response = await fetch('/api/simulations', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    parameters: {
-                        type: 'nbody',
-                        complexity: 'medium',
-                        omegaMatter: 0.3,
-                        hubbleConstant: 70
-                    },
-                    generateVisualization: true
-                })
-            });
-            const data = await response.json();
-            document.getElementById('simResult').textContent = JSON.stringify(data, null, 2);
+            showLoading('simLoading', true);
+            try {
+                const simType = document.getElementById('simType').value;
+                const complexity = document.getElementById('complexity').value;
+                const omegaMatter = parseFloat(document.getElementById('omegaMatter').value);
+                const hubbleConstant = parseFloat(document.getElementById('hubbleConstant').value);
+                const generateVisualization = document.getElementById('generateViz').checked;
+                
+                const response = await fetch('/api/simulations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        parameters: {
+                            type: simType,
+                            complexity: complexity,
+                            omegaMatter: omegaMatter,
+                            hubbleConstant: hubbleConstant
+                        },
+                        generateVisualization: generateVisualization
+                    })
+                });
+                const data = await response.json();
+                document.getElementById('simResult').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('simResult').textContent = `Error: ${error.message}`;
+            } finally {
+                showLoading('simLoading', false);
+            }
         });
 
+        // Start notebook
         document.getElementById('notebookBtn').addEventListener('click', async () => {
-            const response = await fetch('/api/research/notebook/start', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({})
-            });
-            const data = await response.json();
-            document.getElementById('notebookResult').textContent = JSON.stringify(data, null, 2);
+            showLoading('notebookLoading', true);
+            try {
+                const response = await fetch('/api/research/notebook/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const data = await response.json();
+                document.getElementById('notebookResult').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('notebookResult').textContent = `Error: ${error.message}`;
+            } finally {
+                showLoading('notebookLoading', false);
+            }
+        });
+        
+        // Generate visualization
+        document.getElementById('vizBtn').addEventListener('click', async () => {
+            showLoading('vizLoading', true);
+            try {
+                const vizType = document.getElementById('vizType').value;
+                const resolution = document.getElementById('resolution').value;
+                
+                let dimensions;
+                switch(resolution) {
+                    case 'low': dimensions = [800, 600]; break;
+                    case 'medium': dimensions = [1280, 720]; break;
+                    case 'high': dimensions = [1920, 1080]; break;
+                    default: dimensions = [1280, 720];
+                }
+                
+                const response = await fetch('/api/visualizations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: vizType,
+                        dimensions: dimensions,
+                        colorMap: 'viridis',
+                        backgroundColor: [0, 0, 0]
+                    })
+                });
+                const data = await response.json();
+                document.getElementById('vizResult').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('vizResult').textContent = `Error: ${error.message}`;
+            } finally {
+                showLoading('vizLoading', false);
+            }
         });
     </script>
 </body>

@@ -11,7 +11,7 @@ app.use(express.static('public'));
 
 // Basic routes
 app.get('/', (req, res) => {
-  res.send('CosmosCode API is running');
+  res.sendFile('index.html', { root: './public' });
 });
 
 app.get('/api/health', (req, res) => {
