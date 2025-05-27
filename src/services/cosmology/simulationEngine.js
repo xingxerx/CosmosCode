@@ -1,9 +1,6 @@
-const { runPythonScript } = require('../pythonBridge');
-const { simulationDurationSeconds } = require('../../middleware/metrics');
 const path = require('path');
 const fs = require('fs').promises;
 const os = require('os');
-const logger = require('../../utils/logger');
 
 /**
  * Simulation engine for cosmological simulations
@@ -25,134 +22,215 @@ class SimulationEngine {
       'low',
       'medium',
       'high',
-      'ultra-high'
+      'ultra'
     ];
   }
-}
-
-/**
- * Runs a cosmological simulation with specified parameters
- * @param {Object} parameters - Simulation parameters
- * @returns {Promise<Object>} - Simulation results
- */
-async function runCosmologicalSimulation(parameters) {
-  const timer = simulationDurationSeconds.startTimer({
-    type: parameters.type || 'standard',
-    complexity: parameters.complexity || 'medium'
-  });
   
-  try {
-    // Prepare input data
-    const inputFile = path.join(os.tmpdir(), `sim_input_${Date.now()}.json`);
-    await fs.writeFile(inputFile, JSON.stringify(parameters));
+  /**
+   * Run a cosmological simulation
+   * @param {Object} parameters - Simulation parameters
+   * @returns {Object} - Simulation results
+   */
+  runCosmologicalSimulation(parameters = {}) {
+    const {
+      type = 'n-body',
+      complexity = 'medium',
+      particles = 1000,
+      iterations = 100,
+      hubbleConstant = 70,
+      omegaMatter = 0.3,
+      omegaDarkEnergy = 0.7,
+      redshift = 0
+    } = parameters;
     
-    // Run simulation
-    const scriptPath = path.join(__dirname, '../../../python/cosmology_simulation.py');
-    const output = await runPythonScript(scriptPath, [inputFile, '--format=binary']);
+    console.log(`Running ${type} simulation with ${complexity} complexity`);
     
-    // Parse results
-    const results = await parseSimulationOutput(output);
+    // Generate mock simulation results based on parameters
+    const results = this.generateMockResults(type, complexity, parameters);
     
     return {
+      id: `sim-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      type,
+      complexity,
       parameters,
       results,
-      metadata: {
-        timestamp: new Date(),
-        version: '1.0.0'
-      }
+      status: 'completed',
+      createdAt: new Date().toISOString()
     };
-  } finally {
-    timer();
   }
-}
-
-/**
- * Parses simulation output data
- * @param {string} output - Simulation output
- * @returns {Promise<Object>} - Parsed simulation results
- */
-async function parseSimulationOutput(output) {
-  // Parse the output path from the simulation result
-  const outputPath = output.trim();
   
-  try {
-    // Read the binary output file
-    const data = await fs.readFile(outputPath);
+  /**
+   * Generate mock simulation results
+   * @param {string} type - Simulation type
+   * @param {string} complexity - Complexity level
+   * @param {Object} parameters - Simulation parameters
+   * @returns {Object} - Mock results
+   */
+  generateMockResults(type, complexity, parameters) {
+    // Base particle count based on complexity
+    const complexityMultiplier = {
+      'low': 1,
+      'medium': 5,
+      'high': 20,
+      'ultra': 100
+    }[complexity] || 1;
     
-    // Parse the binary data
-    return parseBinarySimulationData(data);
-  } catch (error) {
-    logger.error(`Failed to parse simulation output: ${error.message}`);
-    throw new Error('Failed to parse simulation output');
+    const particleCount = parameters.particles || 1000;
+    const actualParticles = particleCount * complexityMultiplier;
+    
+    // Generate different results based on simulation type
+    switch (type) {
+      case 'n-body':
+        return this.generateNBodyResults(actualParticles, parameters);
+      case 'dark-matter':
+        return this.generateDarkMatterResults(actualParticles, parameters);
+      case 'galaxy-formation':
+        return this.generateGalaxyFormationResults(actualParticles, parameters);
+      case 'cosmic-expansion':
+        return this.generateCosmicExpansionResults(parameters);
+      case 'structure-formation':
+        return this.generateStructureFormationResults(actualParticles, parameters);
+      case 'cmb-fluctuations':
+        return this.generateCMBResults(parameters);
+      default:
+        return this.generateNBodyResults(actualParticles, parameters);
+    }
   }
-}
-
-/**
- * Parses binary simulation data
- * @param {Buffer} data - Binary simulation data
- * @returns {Object} - Parsed simulation data
- */
-function parseBinarySimulationData(data) {
-  // Implementation would depend on the binary format
-  // This is a placeholder for the actual parsing logic
   
-  // For now, assume the data is a JSON string
-  try {
-    return JSON.parse(data.toString());
-  } catch (error) {
-    logger.error(`Failed to parse binary simulation data: ${error.message}`);
-    throw new Error('Failed to parse binary simulation data');
-  }
-}
-
-/**
- * Runs a large-scale distributed simulation across multiple nodes
- * @param {Object} parameters - Simulation parameters
- * @param {Object} clusterConfig - Cluster configuration
- * @returns {Promise<Object>} - Simulation results
- */
-async function runDistributedSimulation(parameters, clusterConfig) {
-  logger.info('Starting distributed cosmological simulation');
-  
-  try {
-    // Prepare input files
-    const paramsFile = path.join(os.tmpdir(), `dist_params_${Date.now()}.json`);
-    await fs.writeFile(paramsFile, JSON.stringify(parameters));
-    
-    const clusterFile = path.join(os.tmpdir(), `cluster_config_${Date.now()}.json`);
-    await fs.writeFile(clusterFile, JSON.stringify(clusterConfig));
-    
-    // Run distributed simulation script
-    const scriptPath = path.join(__dirname, '../../../python/distributed_simulation.py');
-    const output = await runPythonScript(scriptPath, [
-      '--params', paramsFile,
-      '--cluster', clusterFile
-    ], { timeout: 3600000 }); // 1 hour timeout for distributed simulations
-    
-    // Parse results
-    const results = JSON.parse(output);
+  /**
+   * Generate N-Body simulation results
+   */
+  generateNBodyResults(particleCount, parameters) {
+    const iterations = parameters.iterations || 100;
     
     return {
-      parameters,
-      clusterConfig: {
-        nodeCount: clusterConfig.nodeCount,
-        instanceType: clusterConfig.instanceType
+      particles: particleCount,
+      iterations,
+      energy: Math.random() * 0.5 + 0.1,
+      momentum: Math.random() * 0.8 + 0.2,
+      particleDistribution: {
+        mean: Math.random() * 10,
+        stdDev: Math.random() * 2,
+        min: Math.random() * 0.1,
+        max: Math.random() * 100 + 50
       },
-      results,
-      metadata: {
-        timestamp: new Date(),
-        duration: results.duration,
-        nodesUsed: results.nodes_used,
-        version: '1.0.0'
-      }
+      computationTime: Math.random() * 10 + particleCount / 1000,
+      timestamp: new Date().toISOString()
     };
-  } catch (error) {
-    logger.error(`Distributed simulation failed: ${error.message}`);
-    throw new Error('Distributed cosmological simulation failed');
+  }
+  
+  /**
+   * Generate Dark Matter simulation results
+   */
+  generateDarkMatterResults(particleCount, parameters) {
+    const omegaMatter = parameters.omegaMatter || 0.3;
+    const omegaDarkEnergy = parameters.omegaDarkEnergy || 0.7;
+    
+    return {
+      particles: particleCount,
+      darkMatterDensity: omegaMatter * (Math.random() * 0.1 + 0.95),
+      darkEnergyDensity: omegaDarkEnergy * (Math.random() * 0.1 + 0.95),
+      haloCount: Math.floor(Math.sqrt(particleCount) * (Math.random() * 0.5 + 0.5)),
+      filamentCount: Math.floor(Math.sqrt(particleCount) * (Math.random() * 0.3 + 0.2)),
+      voidCount: Math.floor(Math.log10(particleCount) * (Math.random() * 2 + 1)),
+      largestHaloMass: Math.pow(10, Math.random() * 5 + 10),
+      computationTime: Math.random() * 15 + particleCount / 800,
+      timestamp: new Date().toISOString()
+    };
+  }
+  
+  /**
+   * Generate Galaxy Formation simulation results
+   */
+  generateGalaxyFormationResults(particleCount, parameters) {
+    const hubbleConstant = parameters.hubbleConstant || 70;
+    
+    return {
+      particles: particleCount,
+      galaxyCount: Math.floor(Math.sqrt(particleCount) * (Math.random() * 0.4 + 0.1)),
+      starFormationRate: Math.random() * 10 + 1,
+      averageGalaxyMass: Math.pow(10, Math.random() * 3 + 9),
+      hubbleParameter: hubbleConstant * (Math.random() * 0.1 + 0.95),
+      redshift: parameters.redshift || 0,
+      timeElapsed: Math.random() * 5 + 10, // Gyr
+      computationTime: Math.random() * 20 + particleCount / 500,
+      timestamp: new Date().toISOString()
+    };
+  }
+  
+  /**
+   * Generate Cosmic Expansion simulation results
+   */
+  generateCosmicExpansionResults(parameters) {
+    const hubbleConstant = parameters.hubbleConstant || 70;
+    const omegaMatter = parameters.omegaMatter || 0.3;
+    const omegaDarkEnergy = parameters.omegaDarkEnergy || 0.7;
+    
+    return {
+      expansionRate: hubbleConstant * (Math.random() * 0.1 + 0.95),
+      matterDensity: omegaMatter * (Math.random() * 0.1 + 0.95),
+      darkEnergyDensity: omegaDarkEnergy * (Math.random() * 0.1 + 0.95),
+      universeAge: Math.random() * 1 + 13.5, // Gyr
+      criticalDensity: Math.random() * 5e-27 + 8e-27, // kg/m^3
+      deceleration: -omegaDarkEnergy + omegaMatter / 2,
+      computationTime: Math.random() * 5 + 2,
+      timestamp: new Date().toISOString()
+    };
+  }
+  
+  /**
+   * Generate Structure Formation simulation results
+   */
+  generateStructureFormationResults(particleCount, parameters) {
+    const redshift = parameters.redshift || 0;
+    
+    return {
+      particles: particleCount,
+      structureCount: Math.floor(Math.log10(particleCount) * (Math.random() * 3 + 2)),
+      largestStructureMass: Math.pow(10, Math.random() * 4 + 12),
+      powerSpectrumPeak: Math.random() * 0.1 + 0.01,
+      redshift,
+      correlationLength: Math.random() * 10 + 5, // Mpc
+      growthFactor: Math.pow(1 / (1 + redshift), Math.random() * 0.2 + 0.9),
+      computationTime: Math.random() * 25 + particleCount / 400,
+      timestamp: new Date().toISOString()
+    };
+  }
+  
+  /**
+   * Generate CMB Fluctuation simulation results
+   */
+  generateCMBResults(parameters) {
+    return {
+      temperature: 2.725 + (Math.random() * 0.002 - 0.001),
+      fluctuationAmplitude: Math.random() * 1e-5 + 5e-6,
+      spectralIndex: Math.random() * 0.1 + 0.95,
+      acousticPeaks: [
+        Math.random() * 1000 + 200,
+        Math.random() * 1000 + 500,
+        Math.random() * 1000 + 800
+      ],
+      angularResolution: Math.random() * 0.5 + 0.1, // degrees
+      computationTime: Math.random() * 8 + 3,
+      timestamp: new Date().toISOString()
+    };
+  }
+  
+  /**
+   * Get available simulation types
+   * @returns {Array} - List of available simulation types
+   */
+  getSimulationTypes() {
+    return this.simulationTypes;
+  }
+  
+  /**
+   * Get available complexity levels
+   * @returns {Array} - List of available complexity levels
+   */
+  getComplexityLevels() {
+    return this.complexityLevels;
   }
 }
 
-module.exports = {
-  runCosmologicalSimulation,
-  runDistributedSimulation
-};
+module.exports = new SimulationEngine();
