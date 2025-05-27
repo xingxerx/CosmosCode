@@ -41,6 +41,17 @@ node index.js
 
 ## Testing
 
+### Running Tests in Test Mode
+For development and CI/CD, we use a test environment that mocks Python dependencies:
+
+```bash
+# Set environment variable
+export NODE_ENV=test
+
+# Run tests
+npm test
+```
+
 ### Node.js Tests
 ```bash
 npm test
@@ -50,6 +61,15 @@ npm test
 ```bash
 ./run-python-tests.sh
 ```
+
+## CI/CD Pipeline
+
+Our GitHub Actions workflow automatically:
+1. Runs tests in test mode
+2. Builds and tests Docker images
+3. Deploys to staging/production environments
+
+See `.github/workflows/ci.yml` for details.
 
 ## Features
 - Cosmology simulations

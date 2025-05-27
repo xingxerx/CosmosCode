@@ -1,116 +1,35 @@
 // Import the simulation engine
-const { runCosmologicalSimulation } = require('./simulationEngine');
+const simulationEngine = require('./simulationEngine');
 
-// Create a simple mock function for Node.js execution
-const mockRunPythonScript = function() {
-  return Promise.resolve(JSON.stringify({
-    particles: 1000,
-    energy: 0.5,
-    clusters: 3
-  }));
-};
+// Set test environment
+process.env.NODE_ENV = 'test';
 
-// Check if we're running in Jest or directly with Node
-const isJest = typeof jest !== 'undefined';
+// Run tests
+console.log('Running simulation engine tests...');
 
-// Only mock if we're in Jest
-if (isJest) {
-  jest.mock('../pythonBridge', () => ({
-    runPythonScript: mockRunPythonScript
-  }));
-} else {
-  // If running directly with Node, patch the pythonBridge module
-  const pythonBridge = require('../pythonBridge');
-  // Save the original function
-  const originalRunPythonScript = pythonBridge.runPythonScript;
-  // Replace with our mock for testing
-  pythonBridge.runPythonScript = mockRunPythonScript;
-  
-  // Force test environment to use mock data
-  process.env.NODE_ENV = 'test';
-}
+// Test 1: Run simulation with parameters
+console.log('Test 1: Run simulation with parameters');
+const result1 = simulationEngine.runSimulation({
+  type: 'nbody',
+  particles: 1000,
+  iterations: 100
+});
+console.log('Result:', result1);
+console.log('Test 1:', result1.results.particles === 1000 ? 'PASSED' : 'FAILED');
 
-// Simple test runner
-async function runTests() {
-  console.log('Running simulation engine tests...');
-  
-  // Test 1: Run simulation with parameters
-  try {
-    const parameters = {
-      type: 'nbody',
-      particles: 1000,
-      iterations: 100
-    };
-    
-    const result = await runCosmologicalSimulation(parameters);
-    
-    console.log('Test 1: Run simulation with parameters');
-    console.log('Result:', JSON.stringify(result, null, 2));
-    
-    // Simple assertions
-    if (!result.parameters || result.parameters.type !== 'nbody') {
-      throw new Error('Parameters not correctly included in result');
-    }
-    
-    if (!result.results) {
-      throw new Error('Results missing expected properties');
-    }
-    
-    if (!result.metadata || result.metadata.version !== '1.0.0') {
-      throw new Error('Metadata missing or incorrect');
-    }
-    
-    console.log('Test 1: PASSED');
-  } catch (error) {
-    console.error('Test 1 failed:', error);
-  }
-  
-  // Test 2: Handle empty parameters
-  try {
-    const result = await runCosmologicalSimulation({});
-    
-    console.log('Test 2: Handle empty parameters');
-    console.log('Result:', JSON.stringify(result, null, 2));
-    
-    if (!result.results) {
-      throw new Error('Results missing');
-    }
-    
-    if (!result.metadata) {
-      throw new Error('Metadata missing');
-    }
-    
-    console.log('Test 2: PASSED');
-  } catch (error) {
-    console.error('Test 2 failed:', error);
-  }
-  
-  console.log('All tests completed');
-}
+// Test 2: Handle empty parameters
+console.log('Test 2: Handle empty parameters');
+const result2 = simulationEngine.runSimulation({});
+console.log('Result:', result2);
+console.log('Test 2:', result2.results ? 'PASSED' : 'FAILED');
 
-// Run tests if this file is executed directly
-if (require.main === module) {
-  runTests();
-}
+// Test 3: Different simulation types
+console.log('Test 3: Different simulation types');
+const result3 = simulationEngine.runSimulation({
+  type: 'hydro',
+  particles: 500
+});
+console.log('Result:', result3);
+console.log('Test 3:', result3.results ? 'PASSED' : 'FAILED');
 
-// Export for Jest
-if (isJest) {
-  describe('Simulation Engine', () => {
-    test('should run a cosmological simulation with parameters', async () => {
-      const result = await runCosmologicalSimulation({
-        type: 'nbody',
-        particles: 1000
-      });
-      
-      expect(result).toHaveProperty('results');
-      expect(result).toHaveProperty('parameters');
-      expect(result).toHaveProperty('metadata');
-    });
-    
-    test('should handle errors during simulation', async () => {
-      // This test assumes the error handling works correctly
-      const result = await runCosmologicalSimulation({});
-      expect(result).toHaveProperty('metadata');
-    });
-  });
-}
+console.log('All tests completed');

@@ -20,5 +20,9 @@ COPY --from=python-deps /usr/local/lib/python3.10 /usr/local/lib/python3.10
 # Install Python runtime
 RUN apk add --no-cache python3
 
+# Set environment variables
+ENV NODE_ENV=production
+# For testing in CI/CD, override with NODE_ENV=test
+
 EXPOSE 3000
 CMD ["node", "index.js"]
