@@ -3,13 +3,21 @@
  */
 const readline = require('readline');
 const SimulatedInternet = require('./simulated-internet');
-const DNSService = require('./dns-service');
+const DNS = require('./dns-service');
 const NetworkMonitor = require('./network-monitor');
+const NetworkPersistence = require('./network-persistence');
 
-// Create the simulated internet
+// Create instances
 const internet = new SimulatedInternet();
-const dns = new DNSService();
+const dns = new DNS();
 const monitor = new NetworkMonitor(internet);
+const persistence = new NetworkPersistence();
+
+// Load saved network state if available
+const loaded = persistence.loadNetwork(internet, dns);
+if (loaded) {
+  console.log('Loaded saved network configuration');
+}
 
 // Set up event listeners for network events
 internet.on('message-delivered', ({ packet, to }) => {
@@ -401,6 +409,30 @@ const commands = {
       rl.close();
       process.exit(0);
     }
+  },
+  
+  save: {
+    description: 'Save the current network configuration',
+    handler: () => {
+      const saved = persistence.saveNetwork(internet, dns);
+      if (saved) {
+        console.log('Network configuration saved successfully');
+      } else {
+        console.log('Failed to save network configuration');
+      }
+    }
+  },
+  
+  load: {
+    description: 'Load the saved network configuration',
+    handler: () => {
+      const loaded = persistence.loadNetwork(internet, dns);
+      if (loaded) {
+        console.log('Network configuration loaded successfully');
+      } else {
+        console.log('No saved configuration found or error loading');
+      }
+    }
   }
 };
 
@@ -425,6 +457,30 @@ rl.on('line', (line) => {
   console.log('Goodbye!');
   process.exit(0);
 });
+
+// Auto-save on exit
+rl.on('close', () => {
+  persistence.saveNetwork(internet, dns);
+  console.log('Network configuration saved. Goodbye!');
+  process.exit(0);
+});
+
+// Add auto-save after certain commands
+const autoSaveCommands = [
+  'create-node', 'start-node', 'stop-node', 'connect', 
+  'register-domain', 'setup', 'start', 'stop'
+];
+
+// Wrap the original command handlers with auto-save functionality
+for (const cmd of autoSaveCommands) {
+  if (commands[cmd]) {
+    const originalHandler = commands[cmd].handler;
+    commands[cmd].handler = (...args) => {
+      originalHandler(...args);
+      persistence.saveNetwork(internet, dns);
+    };
+  }
+}
 
 // Print welcome message
 console.log('\n=== Network Terminal ===');
