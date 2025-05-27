@@ -37,7 +37,7 @@ class DNSService {
     return domain;
   }
 
-  // List all domains
+  // List all registered domains
   listDomains() {
     return Array.from(this.domains.keys());
   }
