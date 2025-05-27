@@ -14,12 +14,28 @@ To run all unit and integration tests:
 
 This will skip E2E tests by default, as they require additional dependencies.
 
+### JIT-Optimized Test Run
+
+For faster test execution using V8's JIT compiler:
+
+```bash
+./run-tests-jit.sh
+```
+
 ### Test Summary
 
 For a nicely formatted summary of test results:
 
 ```bash
 ./test-summary.sh
+```
+
+### Benchmark Test Performance
+
+To compare standard and JIT-optimized test performance:
+
+```bash
+./benchmark-tests.sh
 ```
 
 ### Running E2E Tests
@@ -54,6 +70,25 @@ jest.mock('../path/to/module', () => ({
   functionName: jest.fn(() => Promise.resolve('mocked result'))
 }));
 ```
+
+## Performance Optimization
+
+### JIT Compilation
+
+The JIT-optimized test runner uses V8 optimization flags to improve performance:
+
+- `--jitless=false`: Ensures JIT compilation is enabled
+- `--opt`: Enables optimizations
+- `--turbo-inlining`: Enables function inlining for better performance
+- `--turbo-instruction-scheduling`: Optimizes instruction scheduling
+
+### Jest Configuration
+
+The Jest configuration is optimized for performance:
+
+- Caching test results for faster reruns
+- Using a percentage of available CPU cores
+- Optimizing for CI environments
 
 ## Troubleshooting
 

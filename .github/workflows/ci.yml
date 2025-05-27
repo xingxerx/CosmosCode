@@ -35,10 +35,11 @@ jobs:
         run: npm ci
       - name: Install Python dependencies
         run: pip install -r requirements.txt
-      - name: Run unit tests
-        run: npm test
+      - name: Run unit tests with JIT optimization
+        run: ./run-tests-jit.sh
         env:
           NODE_ENV: test
+          CI: 'true'
       - name: Run integration tests
         run: npm run test:integration
         env:

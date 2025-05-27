@@ -60,5 +60,24 @@ module.exports = {
       // Longer timeout for E2E tests
       testTimeout: 60000
     }
-  ]
+  ],
+  
+  // Cache settings for better performance
+  cache: true,
+  cacheDirectory: '.jest-cache',
+  
+  // Optimize for CI environments
+  ci: process.env.CI === 'true',
+  
+  // Bail after first failure to speed up CI
+  bail: process.env.CI === 'true' ? 1 : 0,
+  
+  // Optimize for JIT compilation
+  maxWorkers: '50%',
+  
+  // Detect open handles for better cleanup
+  detectOpenHandles: false,
+  
+  // Force exit after tests complete
+  forceExit: true
 };
