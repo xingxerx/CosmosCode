@@ -29,6 +29,7 @@ EOL
     # Create a minimal index.js
     cat > src/index.js << 'EOL'
 const express = require('express');
+const RateLimit = require('express-rate-limit');
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -36,6 +37,16 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 
 // Basic routes
+
+// Setup rate limiter - adjust windowMs and max as per your application's needs
+const limiter = RateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+app.use(limiter); // Apply to all requests
 app.get('/', (req, res) => {
   res.send('CosmosCode API is running');
 });
@@ -96,19 +107,20 @@ if [ ! -f "package.json" ]; then
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js --no-proxy"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.2.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"
   }
 }
 EOL
-
     echo "Installing minimal dependencies..."
-    npm install --no-proxy
+    echo "Installing minimal dependencies (express, express-rate-limit)..."
+    npm install --no-proxy # npm will install express and express-rate-limit from package.json
 fi
 
 # Start the application
