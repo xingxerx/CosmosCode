@@ -275,12 +275,29 @@
         // Display results
         function displayResults(data) {
             resultsElement.style.display = 'block';
-            resultsContentElement.innerHTML = `
-                <h3>Simulation Parameters</h3>
-                <pre>${JSON.stringify(data.parameters, null, 2)}</pre>
-                <h3>Simulation Output</h3>
-                <pre>${JSON.stringify(data.output, null, 2)}</pre>
-            `;
+            
+            // Clear previous content safely
+            resultsContentElement.innerHTML = ''; 
+
+            // Create and append elements for parameters
+            const paramsHeader = document.createElement('h3');
+            paramsHeader.textContent = 'Simulation Parameters';
+            resultsContentElement.appendChild(paramsHeader);
+
+            const paramsPre = document.createElement('pre');
+            paramsPre.textContent = JSON.stringify(data.parameters, null, 2);
+            resultsContentElement.appendChild(paramsPre);
+
+            // Create and append elements for output
+            const outputHeader = document.createElement('h3');
+            outputHeader.textContent = 'Simulation Output';
+            resultsContentElement.appendChild(outputHeader);
+
+            const outputPre = document.createElement('pre');
+            outputPre.textContent = JSON.stringify(data.output, null, 2);
+            resultsContentElement.appendChild(outputPre);
+            
+            // This line is already safe as it uses textContent
             resultsJsonElement.textContent = JSON.stringify(data, null, 2);
         }
         
