@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CosmosCode Dashboard</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2980b9;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .button {
+            padding: 8px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 5px 0;
+        }
+        .button:hover {
+            background-color: #2980b9;
+        }
+        .details-container {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+        pre {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .viz-preview {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <h1>CosmosCode Dashboard</h1>
+        <a href="/" class="button">Back to Home</a>
+    </div>
+    
+    <div class="tabs">
+        <div class="tab active" data-tab="simulations">Simulations</div>
+        <div class="tab" data-tab="visualizations">Visualizations</div>
+    </div>
+    
+    <div id="simulations" class="tab-content active">
+        <div class="card">
+            <h2>Recent Simulations</h2>
+            <table id="simulations-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Type</th>
+                        <th>Complexity</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Simulation rows will be added here -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div id="simulation-details" class="details-container" style="display: none;">
+            <h3>Simulation Details</h3>
+            <div id="simulation-info"></div>
+            <pre id="simulation-results"></pre>
+            <button id="create-viz-btn" class="button">Create Visualization</button>
+        </div>
+    </div>
+    
+    <div id="visualizations" class="tab-content">
+        <div class="card">
+            <h2>Recent Visualizations</h2>
+            <table id="visualizations-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Type</th>
+                        <th>Dimensions</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Visualization rows will be added here -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div id="visualization-details" class="details-container" style="display: none;">
+            <h3>Visualization Details</h3>
+            <div id="visualization-info"></div>
+            <div id="visualization-preview">
+                <!-- Visualization preview will be shown here -->
+                <div style="width: 100%; height: 300px; background-color: #000; display: flex; justify-content: center; align-items: center; color: white; font-size: 24px; border-radius: 5px;">
+                    Visualization Preview
+                </div>
+            </div>
+            <pre id="visualization-results"></pre>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and content
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding content
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+        
+        // Load simulations
+        async function loadSimulations() {
+            try {
+                const response = await fetch('/api/simulations');
+                const simulations = await response.json();
+                
+                const tbody = document.querySelector('#simulations-table tbody');
+                tbody.innerHTML = '';
+                
+                if (simulations.length === 0) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = '<td colspan="5" style="text-align: center;">No simulations found</td>';
+                    tbody.appendChild(row);
+                    return;
+                }
+                
+                simulations.forEach(sim => {
+                    const row = document.createElement('tr');
+                    const created = new Date(sim.createdAt).toLocaleString();
+                    const type = sim.parameters?.type || 'N/A';
+                    const complexity = sim.parameters?.complexity || 'N/A';
+                    
+                    row.innerHTML = `
+                        <td>${sim.id}</td>
+                        <td>${type}</td>
+                        <td>${complexity}</td>
+                        <td>${created}</td>
+                        <td>
+                            <button class="button view-sim-btn" data-id="${sim.id}">View</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                // Add event listeners to view buttons
+                document.querySelectorAll('.view-sim-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const id = btn.dataset.id;
+                        await viewSimulation(id);
+                    });
+                });
+            } catch (error) {
+                console.error('Error loading simulations:', error);
+            }
+        }
+        
+        // View simulation details
+        async function viewSimulation(id) {
+            try {
+                const response = await fetch(`/api/simulations/${id}`);
+                const simulation = await response.json();
+                
+                document.getElementById('simulation-info').innerHTML = `
+                    <p><strong>ID:</strong> ${simulation.id}</p>
+                    <p><strong>Type:</strong> ${simulation.parameters?.type || 'N/A'}</p>
+                    <p><strong>Complexity:</strong> ${simulation.parameters?.complexity || 'N/A'}</p>
+                    <p><strong>Created:</strong> ${new Date(simulation.createdAt).toLocaleString()}</p>
+                `;
+                
+                document.getElementById('simulation-results').textContent = JSON.stringify(simulation.results, null, 2);
+                document.getElementById('simulation-details').style.display = 'block';
+                
+                // Set up create visualization button
+                document.getElementById('create-viz-btn').onclick = () => {
+                    createVisualizationFromSimulation(simulation);
+                };
+            } catch (error) {
+                console.error('Error viewing simulation:', error);
+            }
+        }
+        
+        // Create visualization from simulation
+        async function createVisualizationFromSimulation(simulation) {
+            try {
+                const type = prompt('Enter visualization type (
