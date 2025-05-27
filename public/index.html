@@ -241,7 +241,9 @@
             // Convert form data to JSON
             for (const [key, value] of formData.entries()) {
                 if (key === 'generateVisualization') {
-                    parameters[key] = value === 'on';
+                    parameters[key] = true;
+                } else if (!isNaN(Number(value)) && key !== 'type' && key !== 'complexity') {
+                    parameters[key] = Number(value);
                 } else {
                     parameters[key] = parseFloat(value);
                 }

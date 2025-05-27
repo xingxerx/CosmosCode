@@ -4,7 +4,12 @@
   "description": "Cosmology and Medicine Codebase",
   "main": "index.js",
   "scripts": {
-    "test": "node run-tests.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:integration": "jest --config=jest.integration.config.js",
+    "test:e2e": "jest --config=jest.e2e.config.js",
+    "test:all": "npm run test && npm run test:integration && npm run test:e2e",
     "test:simple": "node src/simple-test.js"
   },
   "keywords": [],
@@ -16,6 +21,9 @@
   },
   "devDependencies": {
     "eslint": "^8.40.0",
-    "jest": "^29.5.0"
+    "jest": "^29.5.0",
+    "puppeteer": "^20.1.0",
+    "supertest": "^6.3.3",
+    "wait-on": "^7.0.1"
   }
 }
