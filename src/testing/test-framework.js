@@ -100,10 +100,14 @@ const jest = {
 // Helper for setup
 const beforeEach = (fn) => fn();
 
+// Export Jest globals to avoid redeclaration issues
 module.exports = {
   describe,
   test,
   expect,
   jest,
-  beforeEach
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll
 };
