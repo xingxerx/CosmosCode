@@ -9,6 +9,9 @@ const port = process.env.PORT || 3000;
 const initializeNetwork = require('./network/initialize-network');
 const NetworkMonitor = require('./network/network-monitor');
 
+// Import routes
+const healthRoutes = require('./routes/health');
+
 // Middleware
 app.use(helmet());
 app.use(express.json());
@@ -36,6 +39,9 @@ app.get('/', (req, res) => {
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
+
+// Register routes
+app.use('/api/health', healthRoutes);
 
 // Simulated internet routes
 app.get('/api/network/status', (req, res) => {
