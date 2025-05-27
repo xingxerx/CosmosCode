@@ -1,10 +1,9 @@
 // Simple test framework wrapper to make tests more consistent
 // and to allow for easy mocking
 
-// Add global jest definition or replace with a different testing framework
-// Around line 14, either:
-const jest = require('jest');
-// Or modify the code to not use jest directly
+// Don't require Jest directly - it's already available in the test environment
+// Remove this line:
+// const jest = require('jest');
 
 // Re-export Jest globals
 const jestGlobals = {
@@ -15,8 +14,8 @@ const jestGlobals = {
   afterEach: global.afterEach,
   beforeAll: global.beforeAll,
   afterAll: global.afterAll,
-  // Create a mock function factory that doesn't conflict with global jest
-  fn: () => jest.fn()
+  // Create a mock function factory using the global jest
+  fn: jest.fn
 };
 
 // Export the globals

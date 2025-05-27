@@ -1,5 +1,5 @@
-// Import our test framework
-const { describe, test, expect } = require('../testing/test-framework');
+// Import Jest directly instead of using our wrapper
+const { describe, test, expect, jest } = require('@jest/globals');
 
 // Mock Express
 const mockRequest = () => ({
@@ -15,53 +15,47 @@ const mockResponse = () => {
   return res;
 };
 
-// Simplified route handler
-function getSimulationResults(req, res) {
-  const simulationId = req.params.id;
+// Simple controller function for testing
+function getSimulation(req, res) {
+  const id = req.params.id;
   
-  if (!simulationId) {
-    return res.status(400).json({ error: 'Simulation ID is required' });
+  if (!id) {
+    return res.status(400).json({ error: 'Missing simulation ID' });
   }
   
   // Return mock data
-  return res.json({
-    id: simulationId,
-    results: {
-      particles: 1000,
-      energy: 0.5
-    }
+  return res.status(200).json({
+    id,
+    type: 'nbody',
+    particles: 1000,
+    results: {}
   });
 }
 
-// Tests
 describe('API Routes', () => {
-  test('should return simulation results for valid ID', () => {
-    const req = mockRequest();
-    req.params.id = 'sim123';
-    
-    const res = mockResponse();
-    
-    getSimulationResults(req, res);
-    
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: 'sim123',
-        results: expect.any(Object)
-      })
-    );
-  });
-  
-  test('should return 400 for missing simulation ID', () => {
+  test('should return 400 when simulation ID is missing', () => {
     const req = mockRequest();
     const res = mockResponse();
     
-    getSimulationResults(req, res);
+    getSimulation(req, res);
     
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({
-        error: expect.any(String)
-      })
-    );
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      error: expect.any(String)
+    }));
+  });
+  
+  test('should return simulation data when ID is provided', () => {
+    const req = mockRequest();
+    req.params.id = '123';
+    const res = mockResponse();
+    
+    getSimulation(req, res);
+    
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      id: '123',
+      type: 'nbody'
+    }));
   });
 });
