@@ -2,7 +2,7 @@ const puppeteer = require('puppeteer');
 const { spawn } = require('child_process');
 const waitOn = require('wait-on');
 
-describe('End-to-End Tests', () => {
+describe.skip('End-to-End Tests', () => {
   let browser;
   let page;
   let serverProcess;

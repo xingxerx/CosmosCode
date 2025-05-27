@@ -37,11 +37,28 @@ module.exports = {
   // Automatically clear mock calls and instances between every test
   clearMocks: true,
   
-  // Explicitly tell Jest to only run specific test files
-  // This is a more direct approach to avoid problematic files
-  testPathIgnorePatterns: [
-    '/node_modules/',
-    '/src/services/cosmology/test.js',
-    '/src/api/routes.simple.test.js'
+  // Set a timeout for tests (30 seconds)
+  testTimeout: 30000,
+  
+  // Configure different test environments for different test files
+  projects: [
+    {
+      displayName: 'unit',
+      testMatch: [
+        '**/__tests__/**/*.js',
+        '**/?(*.)(spec|test).js',
+        '!**/e2e/**'
+      ],
+      testEnvironment: 'node'
+    },
+    {
+      displayName: 'e2e',
+      testMatch: [
+        '**/e2e/**/*.js'
+      ],
+      testEnvironment: 'node',
+      // Longer timeout for E2E tests
+      testTimeout: 60000
+    }
   ]
 };

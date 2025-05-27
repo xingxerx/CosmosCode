@@ -4,30 +4,29 @@ const { runPythonScript } = require('../pythonBridge');
 
 // Mock dependencies
 jest.mock('../analysis/statisticalAnalysis', () => ({
-  performStatisticalAnalysis: jest.fn()
+  performStatisticalAnalysis: jest.fn(() => 
+    Promise.resolve({
+      correlations: [
+        { variable1: 'bloodPressure', variable2: 'heartRate', value: 0.72 },
+        { variable1: 'cholesterol', variable2: 'weight', value: 0.45 }
+      ]
+    })
+  )
 }));
 
 jest.mock('../pythonBridge', () => ({
-  runPythonScript: jest.fn()
+  runPythonScript: jest.fn(() => 
+    Promise.resolve(JSON.stringify({
+      patterns: [
+        { description: 'Increasing trend in glucose levels', confidence: 0.85 }
+      ]
+    }))
+  )
 }));
 
 describe('Patient Analysis Service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
-    // Setup mock responses
-    performStatisticalAnalysis.mockResolvedValue({
-      correlations: [
-        { variable1: 'bloodPressure', variable2: 'heartRate', value: 0.72 },
-        { variable1: 'cholesterol', variable2: 'weight', value: 0.45 }
-      ]
-    });
-    
-    runPythonScript.mockResolvedValue(JSON.stringify({
-      patterns: [
-        { description: 'Increasing trend in glucose levels', confidence: 0.85 }
-      ]
-    }));
   });
   
   test('should analyze patient data and return insights', async () => {

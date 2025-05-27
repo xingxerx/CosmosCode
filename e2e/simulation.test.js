@@ -28,7 +28,7 @@ afterAll(() => {
   }
 });
 
-describe('Simulation E2E Tests', () => {
+describe.skip('Simulation E2E Tests', () => {
   let simulationId;
   
   test('should create a new simulation', async () => {

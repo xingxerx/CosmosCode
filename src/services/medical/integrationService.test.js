@@ -5,11 +5,20 @@ const fs = require('fs').promises;
 
 // Mock dependencies
 jest.mock('../cosmology', () => ({
-  runCosmologicalSimulation: jest.fn()
+  runCosmologicalSimulation: jest.fn(() => 
+    Promise.resolve({
+      results: { particles: 1000 }
+    })
+  )
 }));
 
 jest.mock('../pythonBridge', () => ({
-  runPythonScript: jest.fn()
+  runPythonScript: jest.fn(() => 
+    Promise.resolve(JSON.stringify({
+      correlations: [{ factor: 0.75, significance: 0.01 }],
+      insights: ['Pattern detected between cosmic structures and cellular organization']
+    }))
+  )
 }));
 
 jest.mock('fs', () => ({
@@ -30,16 +39,6 @@ jest.mock('../../utils/logger', () => ({
 describe('Medical Integration Service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
-    // Setup mock responses
-    cosmologyService.runCosmologicalSimulation.mockResolvedValue({
-      results: { particles: 1000 }
-    });
-    
-    runPythonScript.mockResolvedValue(JSON.stringify({
-      correlations: [{ factor: 0.75, significance: 0.01 }],
-      insights: ['Pattern detected between cosmic structures and cellular organization']
-    }));
   });
   
   test('should perform integrated analysis between medical and cosmology data', async () => {
@@ -71,8 +70,8 @@ describe('Medical Integration Service', () => {
   
   test('should handle errors during integration', async () => {
     // Mock an error in the cosmology simulation
-    cosmologyService.runCosmologicalSimulation.mockRejectedValue(
-      new Error('Simulation failed')
+    cosmologyService.runCosmologicalSimulation.mockImplementationOnce(() => 
+      Promise.reject(new Error('Simulation failed'))
     );
     
     // Expect the function to throw an error
