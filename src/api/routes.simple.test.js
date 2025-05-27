@@ -1,5 +1,5 @@
-// Import Jest directly instead of using our wrapper
-const { describe, test, expect, jest } = require('@jest/globals');
+// Use globals directly without importing
+// const { describe, test, expect } = require('@jest/globals');
 
 // Mock Express
 const mockRequest = () => ({
