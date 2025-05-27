@@ -67,7 +67,18 @@ class TopologyManager {
     return nodes;
   }
 
-  // Create a tree topology with specified depth and branching factor
+  /**
+   * Create a tree topology with specified depth and branching factor.
+   * The full tree structure is created within the internet simulation.
+   * @param {string} rootId - The ID for the root node. If the node doesn't exist, it will be created.
+   * @param {number} depth - The depth of the tree (e.g., depth 0 is just the root, depth 1 is root and its direct children).
+   * @param {number} branchingFactor - The number of children each non-leaf node will have.
+   * @param {object} [options={}] - Optional parameters.
+   * @param {string} [options.rootType='router'] - The type of the root node.
+   * @param {string} [options.leafType='client'] - The type of the leaf nodes (nodes at the maximum depth).
+   * @param {string} [options.nodeType='router'] - The type of intermediate (non-root, non-leaf) nodes.
+   * @returns {{root: object, children: object[]}} An object containing the root node and an array of its direct children.
+   */
   createTreeTopology(rootId, depth, branchingFactor, options = {}) {
     const rootNode = this.internet.nodes.get(rootId) || 
                     this.internet.createNode(rootId, options.rootType || 'router');
@@ -88,5 +99,18 @@ class TopologyManager {
         this.internet.connect(parentId, childId);
         children.push(childNode);
         
-        createChildren(childId, currentDepth + 1);
-     
+        createChildren(childId, currentDepth + 1); // Recursively create children
+      }
+      
+      return children;
+    };
+    
+    const children = createChildren(rootId, 0);
+    return {
+      root: rootNode,
+      children
+    };
+  }
+}
+
+module.exports = TopologyManager;
