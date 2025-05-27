@@ -32,6 +32,8 @@ jobs:
         run: npm test
       - name: Run integration tests
         run: npm run test:integration
+      - name: Run network simulation tests
+        run: node src/network/network-tests.js
       - name: Generate coverage report
         run: npm run test:coverage
       - name: Upload coverage reports
@@ -67,19 +69,88 @@ jobs:
         run: docker build -t cosmoscode .
       - name: Run container tests
         run: docker run cosmoscode npm test
+      - name: Save Docker image
+        run: docker save cosmoscode > cosmoscode.tar
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-image
+          path: cosmoscode.tar
+          retention-days: 1
       
-  deploy:
+  deploy-staging:
     needs: [build]
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
     runs-on: ubuntu-latest
+    environment: staging
     steps:
       - uses: actions/checkout@v3
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-image
+      - name: Load Docker image
+        run: docker load < cosmoscode.tar
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
       - name: Install Python dependencies
         run: pip install -r requirements.txt
-      - name: Deploy application
-        run: echo "Deployment would happen here"
-        # Add actual deployment steps here
+      - name: Setup micromamba
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          environment-name: cosmoscode
+          create-args: python=3.10
+      - name: Deploy to staging
+        run: |
+          # Setup Python environment
+          ./setup-python-env.sh
+          
+          # Deploy using Docker Compose
+          docker-compose -f docker-compose.yml up -d
+          
+          echo "Application deployed to staging environment"
+      - name: Run post-deployment tests
+        run: npm run test:e2e
+        
+  deploy-production:
+    needs: [build]
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-image
+      - name: Load Docker image
+        run: docker load < cosmoscode.tar
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+      - name: Setup micromamba
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          environment-name: cosmoscode
+          create-args: python=3.10
+      - name: Deploy to production
+        run: |
+          # Setup Python environment
+          ./setup-python-env.sh
+          
+          # Deploy using Docker Compose with production overrides
+          docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+          
+          echo "Application deployed to production environment"
+      - name: Run post-deployment verification
+        run: |
+          # Wait for services to be fully available
+          sleep 30
+          
+          # Run verification tests
+          npm run test:e2e -- --production
