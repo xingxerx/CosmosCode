@@ -2,6 +2,7 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs').promises;
 const logger = require('../../utils/logger');
+const os = require('os');
 
 /**
  * Starts a Jupyter notebook server for interactive research
@@ -15,12 +16,14 @@ function startNotebookServer(options = {}) {
     allowRoot = false
   } = options;
   
+  logger.info(`Starting Jupyter notebook server on port ${port}`);
+  
   return new Promise(async (resolve, reject) => {
     try {
       // Ensure notebook directory exists
       await fs.mkdir(notebookDir, { recursive: true });
       
-      // Build command arguments
+      // Prepare arguments
       const args = [
         '-m', 'jupyter', 'notebook',
         `--port=${port}`,
@@ -63,13 +66,13 @@ function startNotebookServer(options = {}) {
         }
       });
       
-      // Timeout if server doesn't start
+      // Set timeout
       setTimeout(() => {
         if (!serverInfo) {
           jupyter.kill();
-          reject(new Error('Jupyter notebook server failed to start'));
+          reject(new Error('Timeout waiting for Jupyter server to start'));
         }
-      }, 10000);
+      }, 30000);
     } catch (error) {
       reject(error);
     }
@@ -83,6 +86,8 @@ function startNotebookServer(options = {}) {
  * @returns {Promise<Object>} - Executed notebook with results
  */
 async function executeNotebook(notebookPath, parameters = {}) {
+  logger.info(`Executing notebook: ${notebookPath}`);
+  
   // Write parameters to temporary file
   const paramsPath = path.join(os.tmpdir(), `params_${Date.now()}.json`);
   await fs.writeFile(paramsPath, JSON.stringify(parameters));
@@ -123,7 +128,59 @@ async function executeNotebook(notebookPath, parameters = {}) {
   });
 }
 
+/**
+ * Creates a new research notebook with template
+ * @param {string} title - Notebook title
+ * @param {string} template - Template name
+ * @returns {Promise<string>} - Path to the created notebook
+ */
+async function createResearchNotebook(title, template = 'default') {
+  logger.info(`Creating research notebook: ${title}`);
+  
+  try {
+    // Sanitize title for filename
+    const sanitizedTitle = title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `${sanitizedTitle}_${timestamp}.ipynb`;
+    
+    // Get template path
+    const templatePath = path.join(process.cwd(), 'notebooks', 'templates', `${template}.ipynb`);
+    
+    // Create notebooks directory if it doesn't exist
+    const notebooksDir = path.join(process.cwd(), 'notebooks', 'research');
+    await fs.mkdir(notebooksDir, { recursive: true });
+    
+    // Output path
+    const outputPath = path.join(notebooksDir, filename);
+    
+    // Check if template exists
+    try {
+      await fs.access(templatePath);
+    } catch (error) {
+      throw new Error(`Template not found: ${template}`);
+    }
+    
+    // Read template
+    const templateContent = await fs.readFile(templatePath, 'utf8');
+    const notebook = JSON.parse(templateContent);
+    
+    // Update notebook metadata
+    notebook.metadata = notebook.metadata || {};
+    notebook.metadata.title = title;
+    notebook.metadata.created = new Date().toISOString();
+    
+    // Write notebook
+    await fs.writeFile(outputPath, JSON.stringify(notebook, null, 2));
+    
+    return outputPath;
+  } catch (error) {
+    logger.error(`Failed to create notebook: ${error.message}`);
+    throw new Error(`Failed to create research notebook: ${error.message}`);
+  }
+}
+
 module.exports = {
   startNotebookServer,
-  executeNotebook
+  executeNotebook,
+  createResearchNotebook
 };
