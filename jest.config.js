@@ -49,7 +49,9 @@ module.exports = {
         '**/?(*.)(spec|test).js',
         '!**/e2e/**'
       ],
-      testEnvironment: 'node'
+      testEnvironment: 'node',
+      // Set timeout for unit tests
+      testTimeout: 30000
     },
     {
       displayName: 'e2e',
@@ -76,7 +78,7 @@ module.exports = {
   maxWorkers: '50%',
   
   // Detect open handles for better cleanup
-  detectOpenHandles: false,
+  detectOpenHandles: true,
   
   // Force exit after tests complete
   forceExit: true

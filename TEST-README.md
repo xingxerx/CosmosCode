@@ -75,12 +75,12 @@ jest.mock('../path/to/module', () => ({
 
 ### JIT Compilation
 
-The JIT-optimized test runner uses V8 optimization flags to improve performance:
+The JIT-optimized test runner uses Node.js optimization flags to improve performance:
 
-- `--jitless=false`: Ensures JIT compilation is enabled
-- `--opt`: Enables optimizations
-- `--turbo-inlining`: Enables function inlining for better performance
-- `--turbo-instruction-scheduling`: Optimizes instruction scheduling
+- `--expose-gc`: Exposes garbage collection for better memory management
+- `--max-old-space-size=4096`: Increases memory limit to 4GB for larger test suites
+
+The runner also uses Jest's `--detectOpenHandles` flag to identify any asynchronous operations that might be keeping the process alive after tests complete.
 
 ### Jest Configuration
 
@@ -89,6 +89,8 @@ The Jest configuration is optimized for performance:
 - Caching test results for faster reruns
 - Using a percentage of available CPU cores
 - Optimizing for CI environments
+- Setting appropriate timeouts for different test types
+- Detecting open handles for better cleanup
 
 ## Troubleshooting
 
