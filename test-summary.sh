@@ -1,65 +1,48 @@
 #!/bin/bash
 
-# Set colors
+# Set colors for better readability
 GREEN='\033[0;32m'
-RED='\033[0;31m'
 YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-echo -e "${YELLOW}=== CosmosCode Test Summary ===${NC}\n"
+# Set environment variables
+export NODE_ENV=test
 
-# Run tests and capture output
-TEST_OUTPUT=$(./run-tests.sh 2>&1)
+echo -e "${BLUE}Generating test summary...${NC}"
 
-# Extract test counts using grep and awk for more reliable parsing
-TESTS_LINE=$(echo "$TEST_OUTPUT" | grep "Tests:" | tail -1)
-SUITES_LINE=$(echo "$TEST_OUTPUT" | grep "Test Suites:" | tail -1)
+# Count test files
+UNIT_TESTS=$(find . -name "*.test.js" -o -name "*.spec.js" | grep -v "integration" | grep -v "e2e" | wc -l)
+INTEGRATION_TESTS=$(find . -name "*.test.js" -o -name "*.spec.js" | grep "integration" | wc -l)
+E2E_TESTS=$(find ./e2e -name "*.test.js" -o -name "*.spec.js" | wc -l)
+TOTAL_TESTS=$((UNIT_TESTS + INTEGRATION_TESTS + E2E_TESTS))
 
-# Parse test counts
-TESTS_PASSED=$(echo "$TESTS_LINE" | grep -o '[0-9]* passed' | awk '{print $1}')
-TESTS_FAILED=$(echo "$TESTS_LINE" | grep -o '[0-9]* failed' | awk '{print $1}')
-TESTS_SKIPPED=$(echo "$TESTS_LINE" | grep -o '[0-9]* skipped' | awk '{print $1}')
-TESTS_TOTAL=$(echo "$TESTS_LINE" | grep -o '[0-9]* total' | awk '{print $1}')
+# Run Jest with json reporter to get detailed stats
+npx jest --json --outputFile=test-report.json > /dev/null 2>&1
 
-# Parse suite counts
-SUITES_PASSED=$(echo "$SUITES_LINE" | grep -o '[0-9]* passed' | awk '{print $1}')
-SUITES_FAILED=$(echo "$SUITES_LINE" | grep -o '[0-9]* failed' | awk '{print $1}')
-SUITES_SKIPPED=$(echo "$SUITES_LINE" | grep -o '[0-9]* skipped' | awk '{print $1}')
-SUITES_TOTAL=$(echo "$SUITES_LINE" | grep -o '[0-9]* total' | awk '{print $1}')
-
-# Default to 0 if not found
-TESTS_PASSED=${TESTS_PASSED:-0}
-TESTS_FAILED=${TESTS_FAILED:-0}
-TESTS_SKIPPED=${TESTS_SKIPPED:-0}
-TESTS_TOTAL=${TESTS_TOTAL:-0}
-
-SUITES_PASSED=${SUITES_PASSED:-0}
-SUITES_FAILED=${SUITES_FAILED:-0}
-SUITES_SKIPPED=${SUITES_SKIPPED:-0}
-SUITES_TOTAL=${SUITES_TOTAL:-0}
-
-# Print summary
-echo -e "${GREEN}Test Suites Passed:${NC}  $SUITES_PASSED of $SUITES_TOTAL"
-echo -e "${RED}Test Suites Failed:${NC}  $SUITES_FAILED of $SUITES_TOTAL"
-echo -e "${YELLOW}Test Suites Skipped:${NC} $SUITES_SKIPPED of $SUITES_TOTAL"
-echo
-echo -e "${GREEN}Tests Passed:${NC}  $TESTS_PASSED of $TESTS_TOTAL"
-echo -e "${RED}Tests Failed:${NC}  $TESTS_FAILED of $TESTS_TOTAL"
-echo -e "${YELLOW}Tests Skipped:${NC} $TESTS_SKIPPED of $TESTS_TOTAL"
-echo
-
-# Calculate pass rate
-if [ "$TESTS_TOTAL" -gt 0 ]; then
-  PASS_RATE=$(echo "scale=2; ($TESTS_PASSED * 100) / $TESTS_TOTAL" | bc)
-  echo -e "Pass Rate: ${PASS_RATE}%"
-  echo
-fi
-
-# Print recommendations
-if [ "$TESTS_FAILED" -gt 0 ]; then
-  echo -e "${RED}Action needed: Fix failing tests${NC}"
-elif [ "$TESTS_SKIPPED" -gt 0 ]; then
-  echo -e "${YELLOW}Note: Some tests were skipped${NC}"
+# Parse the JSON report
+if [ -f "test-report.json" ]; then
+  PASSED_TESTS=$(cat test-report.json | jq '.numPassedTests')
+  FAILED_TESTS=$(cat test-report.json | jq '.numFailedTests')
+  TOTAL_TEST_CASES=$(cat test-report.json | jq '.numTotalTests')
+  TEST_SUITES=$(cat test-report.json | jq '.numTotalTestSuites')
+  TEST_TIME=$(cat test-report.json | jq '.testResults[].endTime - .testResults[].startTime' | jq -s 'add/1000')
+  
+  # Print summary
+  echo -e "${BLUE}=== Test Summary ===${NC}"
+  echo -e "Test Files: ${YELLOW}$TOTAL_TESTS${NC} (Unit: $UNIT_TESTS, Integration: $INTEGRATION_TESTS, E2E: $E2E_TESTS)"
+  echo -e "Test Suites: ${YELLOW}$TEST_SUITES${NC}"
+  echo -e "Test Cases: ${YELLOW}$TOTAL_TEST_CASES${NC} (Passed: ${GREEN}$PASSED_TESTS${NC}, Failed: ${RED}$FAILED_TESTS${NC})"
+  echo -e "Execution Time: ${YELLOW}${TEST_TIME}s${NC}"
+  
+  # Calculate pass rate
+  PASS_RATE=$(echo "scale=2; ($PASSED_TESTS / $TOTAL_TEST_CASES) * 100" | bc)
+  echo -e "Pass Rate: ${GREEN}${PASS_RATE}%${NC}"
+  
+  # Clean up
+  rm test-report.json
 else
-  echo -e "${GREEN}All tests passed successfully!${NC}"
+  echo -e "${RED}Failed to generate test report.${NC}"
+  exit 1
 fi

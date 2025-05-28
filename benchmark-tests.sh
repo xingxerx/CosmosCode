@@ -1,71 +1,73 @@
 #!/bin/bash
 
-# Set colors
+# Set colors for better readability
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
+RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-echo -e "${YELLOW}=== CosmosCode Test Benchmark ===${NC}"
+# Set environment variables
+export NODE_ENV=test
+
+echo -e "${BLUE}Running test performance benchmark...${NC}"
+echo -e "${YELLOW}This will compare standard and JIT-optimized test execution times.${NC}"
 echo
 
-# Number of runs for more accurate benchmarking
-RUNS=3
+# Function to run tests and measure time
+run_benchmark() {
+  local mode=$1
+  local cmd=$2
+  
+  echo -e "${BLUE}Running $mode tests...${NC}"
+  
+  # Run tests 3 times and take the average
+  local total_time=0
+  local runs=3
+  
+  for i in $(seq 1 $runs); do
+    echo -e "${YELLOW}Run $i of $runs...${NC}"
+    start_time=$(date +%s.%N)
+    eval $cmd > /dev/null 2>&1
+    end_time=$(date +%s.%N)
+    
+    # Calculate execution time
+    execution_time=$(echo "$end_time - $start_time" | bc)
+    total_time=$(echo "$total_time + $execution_time" | bc)
+    
+    echo -e "${GREEN}Completed in ${execution_time} seconds${NC}"
+  done
+  
+  # Calculate average time
+  average_time=$(echo "scale=3; $total_time / $runs" | bc)
+  echo -e "${GREEN}Average execution time: ${average_time} seconds${NC}"
+  echo
+  
+  # Return the average time
+  echo $average_time
+}
 
-# Run standard tests multiple times and calculate average
-echo -e "${BLUE}Running standard tests (${RUNS} runs)...${NC}"
-STANDARD_TOTAL=0
-for i in $(seq 1 $RUNS); do
-  echo -e "  Run $i of $RUNS..."
-  START_TIME=$(date +%s.%N)
-  ./run-tests.sh > /dev/null 2>&1
-  END_TIME=$(date +%s.%N)
-  RUNTIME=$(echo "$END_TIME - $START_TIME" | bc)
-  # Ensure runtime is positive
-  if (( $(echo "$RUNTIME < 0" | bc -l) )); then
-    echo -e "  Warning: Negative runtime detected, using absolute value"
-    RUNTIME=$(echo "scale=9; sqrt($RUNTIME * $RUNTIME)" | bc)
-  fi
-  STANDARD_TOTAL=$(echo "$STANDARD_TOTAL + $RUNTIME" | bc)
-  echo -e "  Runtime: $RUNTIME seconds"
-  # Wait a moment between runs
-  sleep 1
-done
-STANDARD_RUNTIME=$(echo "scale=4; $STANDARD_TOTAL / $RUNS" | bc)
-echo -e "${GREEN}Average standard test runtime:${NC} $STANDARD_RUNTIME seconds"
+# Run standard tests
+standard_time=$(run_benchmark "standard" "npx jest")
 
-echo
-
-# Run JIT-optimized tests multiple times and calculate average
-echo -e "${BLUE}Running JIT-optimized tests (${RUNS} runs)...${NC}"
-JIT_TOTAL=0
-for i in $(seq 1 $RUNS); do
-  echo -e "  Run $i of $RUNS..."
-  START_TIME=$(date +%s.%N)
-  ./run-tests-jit.sh > /dev/null 2>&1
-  END_TIME=$(date +%s.%N)
-  RUNTIME=$(echo "$END_TIME - $START_TIME" | bc)
-  # Ensure runtime is positive
-  if (( $(echo "$RUNTIME < 0" | bc -l) )); then
-    echo -e "  Warning: Negative runtime detected, using absolute value"
-    RUNTIME=$(echo "scale=9; sqrt($RUNTIME * $RUNTIME)" | bc)
-  fi
-  JIT_TOTAL=$(echo "$JIT_TOTAL + $RUNTIME" | bc)
-  echo -e "  Runtime: $RUNTIME seconds"
-  # Wait a moment between runs
-  sleep 1
-done
-JIT_RUNTIME=$(echo "scale=4; $JIT_TOTAL / $RUNS" | bc)
-echo -e "${GREEN}Average JIT-optimized test runtime:${NC} $JIT_RUNTIME seconds"
+# Run JIT-optimized tests
+jit_time=$(run_benchmark "JIT-optimized" "node --expose-gc --max-old-space-size=4096 node_modules/.bin/jest")
 
 # Calculate improvement
-IMPROVEMENT=$(echo "scale=2; (($STANDARD_RUNTIME - $JIT_RUNTIME) / $STANDARD_RUNTIME) * 100" | bc)
-echo
-echo -e "${YELLOW}Performance improvement:${NC} $IMPROVEMENT%"
+improvement=$(echo "scale=2; (($standard_time - $jit_time) / $standard_time) * 100" | bc)
 
-# Recommendation
-if (( $(echo "$IMPROVEMENT > 5" | bc -l) )); then
-  echo -e "${GREEN}Recommendation:${NC} Use JIT-optimized tests for CI/CD pipelines"
+echo -e "${BLUE}=== Benchmark Results ===${NC}"
+echo -e "Standard execution time: ${YELLOW}${standard_time}${NC} seconds"
+echo -e "JIT-optimized execution time: ${YELLOW}${jit_time}${NC} seconds"
+echo -e "Performance improvement: ${GREEN}${improvement}%${NC}"
+
+# Provide recommendations
+echo
+echo -e "${BLUE}=== Recommendations ===${NC}"
+if (( $(echo "$improvement > 10" | bc -l) )); then
+  echo -e "${GREEN}✓ JIT optimization provides significant performance benefits.${NC}"
+  echo -e "${GREEN}✓ Consider using run-tests-jit.sh for CI/CD pipelines.${NC}"
 else
-  echo -e "${YELLOW}Recommendation:${NC} Standard tests are sufficient (JIT optimization gain is minimal)"
+  echo -e "${YELLOW}⚠ JIT optimization provides minimal benefits in this environment.${NC}"
+  echo -e "${YELLOW}⚠ Standard test execution may be sufficient.${NC}"
 fi

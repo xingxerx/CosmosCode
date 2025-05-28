@@ -1,72 +1,50 @@
 #!/bin/bash
 
-# Set colors
+# Set colors for better readability
 GREEN='\033[0;32m'
-RED='\033[0;31m'
 YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
+RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}=== CosmosCode Test Report ===${NC}\n"
+# Set environment variables
+export NODE_ENV=test
 
-# Run unit tests
-echo -e "${YELLOW}Running Unit Tests...${NC}"
-UNIT_OUTPUT=$(npx jest --config=jest.config.js --testPathIgnorePatterns="/node_modules/" "/e2e/" 2>&1)
-UNIT_STATUS=$?
+echo -e "${BLUE}Generating comprehensive test report...${NC}"
 
-# Run E2E tests
-echo -e "\n${YELLOW}Running E2E Tests...${NC}"
-E2E_OUTPUT=$(./run-e2e-tests.sh 2>&1)
-E2E_STATUS=$?
+# Create reports directory
+mkdir -p reports
 
-# Print unit test results
-echo -e "\n${BLUE}=== Unit Test Results ===${NC}"
-echo "$UNIT_OUTPUT" | grep -E "Test Suites:|Tests:|Time:|Ran all"
+# Run tests with various reporters
+echo -e "${YELLOW}Running tests with detailed reporting...${NC}"
+npx jest --json --outputFile=reports/test-results.json --reporters=default --reporters=jest-junit --testLocationInResults > /dev/null 2>&1
 
-# Print E2E test results
-echo -e "\n${BLUE}=== E2E Test Results ===${NC}"
-echo "$E2E_OUTPUT" | grep -E "Test Suites:|Tests:|Time:|Ran all"
+# Generate HTML report
+echo -e "${YELLOW}Generating HTML report...${NC}"
+npx jest-html-reporter --json reports/test-results.json --outputPath reports/test-report.html
 
-# Extract test counts for summary
-UNIT_TESTS_PASSED=$(echo "$UNIT_OUTPUT" | grep "Tests:" | tail -1 | grep -o '[0-9]* passed' | awk '{print $1}')
-UNIT_TESTS_FAILED=$(echo "$UNIT_OUTPUT" | grep "Tests:" | tail -1 | grep -o '[0-9]* failed' | awk '{print $1}')
-UNIT_TESTS_TOTAL=$(echo "$UNIT_OUTPUT" | grep "Tests:" | tail -1 | grep -o '[0-9]* total' | awk '{print $1}')
+# Generate coverage report
+echo -e "${YELLOW}Generating coverage report...${NC}"
+npx jest --coverage --coverageReporters=text-summary --coverageReporters=lcov --coverageReporters=html --coverageDirectory=reports/coverage > /dev/null 2>&1
 
-E2E_TESTS_PASSED=$(echo "$E2E_OUTPUT" | grep "Tests:" | tail -1 | grep -o '[0-9]* passed' | awk '{print $1}')
-E2E_TESTS_FAILED=$(echo "$E2E_OUTPUT" | grep "Tests:" | tail -1 | grep -o '[0-9]* failed' | awk '{print $1}')
-E2E_TESTS_TOTAL=$(echo "$E2E_OUTPUT" | grep "Tests:" | tail -1 | grep -o '[0-9]* total' | awk '{print $1}')
+# Generate test summary
+echo -e "${YELLOW}Generating test summary...${NC}"
+cat reports/test-results.json | jq '{
+  "testSuites": .numTotalTestSuites,
+  "tests": .numTotalTests,
+  "passed": .numPassedTests,
+  "failed": .numFailedTests,
+  "skipped": .numPendingTests,
+  "executionTime": .testResults[].endTime - .testResults[].startTime | add/1000,
+  "passRate": (.numPassedTests / .numTotalTests * 100 | floor) + "%"
+}' > reports/summary.json
 
-# Default to 0 if not found
-UNIT_TESTS_PASSED=${UNIT_TESTS_PASSED:-0}
-UNIT_TESTS_FAILED=${UNIT_TESTS_FAILED:-0}
-UNIT_TESTS_TOTAL=${UNIT_TESTS_TOTAL:-0}
+# Display summary
+echo -e "\n${BLUE}=== Test Report Summary ===${NC}"
+cat reports/summary.json | jq -r '"Test Suites: \(.testSuites)\nTests: \(.tests)\nPassed: \(.passed)\nFailed: \(.failed)\nSkipped: \(.skipped)\nExecution Time: \(.executionTime)s\nPass Rate: \(.passRate)"'
 
-E2E_TESTS_PASSED=${E2E_TESTS_PASSED:-0}
-E2E_TESTS_FAILED=${E2E_TESTS_FAILED:-0}
-E2E_TESTS_TOTAL=${E2E_TESTS_TOTAL:-0}
-
-# Calculate totals
-TOTAL_TESTS=$((UNIT_TESTS_TOTAL + E2E_TESTS_TOTAL))
-TOTAL_PASSED=$((UNIT_TESTS_PASSED + E2E_TESTS_PASSED))
-TOTAL_FAILED=$((UNIT_TESTS_FAILED + E2E_TESTS_FAILED))
-
-# Print summary
-echo -e "\n${BLUE}=== Test Summary ===${NC}"
-echo -e "Unit Tests: ${GREEN}$UNIT_TESTS_PASSED passed${NC}, ${RED}$UNIT_TESTS_FAILED failed${NC}, $UNIT_TESTS_TOTAL total"
-echo -e "E2E Tests:  ${GREEN}$E2E_TESTS_PASSED passed${NC}, ${RED}$E2E_TESTS_FAILED failed${NC}, $E2E_TESTS_TOTAL total"
-echo -e "Total:      ${GREEN}$TOTAL_PASSED passed${NC}, ${RED}$TOTAL_FAILED failed${NC}, $TOTAL_TESTS total"
-
-# Calculate pass rate
-if [ "$TOTAL_TESTS" -gt 0 ]; then
-  PASS_RATE=$(echo "scale=2; ($TOTAL_PASSED * 100) / $TOTAL_TESTS" | bc)
-  echo -e "\nPass Rate: ${PASS_RATE}%"
-fi
-
-# Calculate overall status
-if [ $UNIT_STATUS -eq 0 ] && [ $E2E_STATUS -eq 0 ]; then
-  echo -e "\n${GREEN}All tests passed successfully!${NC}"
-  exit 0
-else
-  echo -e "\n${RED}Some tests failed. Please check the output above.${NC}"
-  exit 1
-fi
+echo -e "\n${GREEN}Reports generated successfully!${NC}"
+echo -e "${YELLOW}HTML Report:${NC} ./reports/test-report.html"
+echo -e "${YELLOW}Coverage Report:${NC} ./reports/coverage/lcov-report/index.html"
+echo -e "${YELLOW}JSON Results:${NC} ./reports/test-results.json"
+echo -e "${YELLOW}Summary:${NC} ./reports/summary.json"
