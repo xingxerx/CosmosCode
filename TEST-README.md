@@ -14,6 +14,14 @@ To run all unit and integration tests:
 
 This will skip E2E tests by default, as they require additional dependencies.
 
+### Comprehensive Test Run
+
+To run all tests including E2E tests:
+
+```bash
+./run-all-tests.sh --with-e2e
+```
+
 ### JIT-Optimized Test Run
 
 For faster test execution using V8's JIT compiler:
@@ -30,6 +38,14 @@ For a nicely formatted summary of test results:
 ./test-summary.sh
 ```
 
+### Detailed Test Report
+
+For a comprehensive test report:
+
+```bash
+./test-report.sh
+```
+
 ### Benchmark Test Performance
 
 To compare standard and JIT-optimized test performance:
@@ -40,16 +56,31 @@ To compare standard and JIT-optimized test performance:
 
 ### Running E2E Tests
 
-To run E2E tests (requires additional dependencies):
-
-```bash
-./run-tests.sh --with-e2e
-```
-
-Or to run only E2E tests:
+To run only E2E tests:
 
 ```bash
 ./run-e2e-tests.sh
+```
+
+### Running Specific Test Types
+
+The `run-all-tests.sh` script supports various options:
+
+```bash
+# Run only unit tests
+./run-all-tests.sh --unit-only
+
+# Run only integration tests
+./run-all-tests.sh --integration-only
+
+# Run only E2E tests
+./run-all-tests.sh --e2e-only
+
+# Run only network tests
+./run-all-tests.sh --with-network --network-only
+
+# Run with verbose output
+./run-all-tests.sh --verbose
 ```
 
 ## Test Structure
@@ -79,6 +110,7 @@ The test runners are optimized for performance:
 
 - `run-tests.sh`: Standard test runner
 - `run-tests-jit.sh`: Optimized test runner with garbage collection and memory management
+- `run-e2e-tests.sh`: Specialized runner for E2E tests
 
 Our benchmarks show that the JIT-optimized test runner is approximately 42% faster than the standard test runner, which can significantly reduce CI/CD pipeline execution time.
 
@@ -117,6 +149,8 @@ The Jest configuration is optimized for performance:
    ```bash
    ./run-tests.sh --detectOpenHandles
    ```
+
+4. **Validation Warnings**: If you see Jest configuration validation warnings, check the configuration files for invalid options.
 
 ### Cleaning Up Test Files
 

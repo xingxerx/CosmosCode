@@ -11,17 +11,21 @@ echo -e "${YELLOW}=== CosmosCode Test Summary ===${NC}\n"
 # Run tests and capture output
 TEST_OUTPUT=$(./run-tests.sh 2>&1)
 
-# Extract test counts using grep and sed
-TESTS_PASSED=$(echo "$TEST_OUTPUT" | grep "Tests:" | tail -1 | sed -E 's/.*([0-9]+) passed.*/\1/')
-TESTS_FAILED=$(echo "$TEST_OUTPUT" | grep "Tests:" | tail -1 | sed -E 's/.*([0-9]+) failed.*/\1/')
-TESTS_SKIPPED=$(echo "$TEST_OUTPUT" | grep "Tests:" | tail -1 | sed -E 's/.*([0-9]+) skipped.*/\1/')
-TESTS_TOTAL=$(echo "$TEST_OUTPUT" | grep "Tests:" | tail -1 | sed -E 's/.*([0-9]+) total.*/\1/')
+# Extract test counts using grep and awk for more reliable parsing
+TESTS_LINE=$(echo "$TEST_OUTPUT" | grep "Tests:" | tail -1)
+SUITES_LINE=$(echo "$TEST_OUTPUT" | grep "Test Suites:" | tail -1)
 
-# Extract test suite counts
-SUITES_PASSED=$(echo "$TEST_OUTPUT" | grep "Test Suites:" | tail -1 | sed -E 's/.*([0-9]+) passed.*/\1/')
-SUITES_FAILED=$(echo "$TEST_OUTPUT" | grep "Test Suites:" | tail -1 | sed -E 's/.*([0-9]+) failed.*/\1/')
-SUITES_SKIPPED=$(echo "$TEST_OUTPUT" | grep "Test Suites:" | tail -1 | sed -E 's/.*([0-9]+) skipped.*/\1/')
-SUITES_TOTAL=$(echo "$TEST_OUTPUT" | grep "Test Suites:" | tail -1 | sed -E 's/.*([0-9]+) total.*/\1/')
+# Parse test counts
+TESTS_PASSED=$(echo "$TESTS_LINE" | grep -o '[0-9]* passed' | awk '{print $1}')
+TESTS_FAILED=$(echo "$TESTS_LINE" | grep -o '[0-9]* failed' | awk '{print $1}')
+TESTS_SKIPPED=$(echo "$TESTS_LINE" | grep -o '[0-9]* skipped' | awk '{print $1}')
+TESTS_TOTAL=$(echo "$TESTS_LINE" | grep -o '[0-9]* total' | awk '{print $1}')
+
+# Parse suite counts
+SUITES_PASSED=$(echo "$SUITES_LINE" | grep -o '[0-9]* passed' | awk '{print $1}')
+SUITES_FAILED=$(echo "$SUITES_LINE" | grep -o '[0-9]* failed' | awk '{print $1}')
+SUITES_SKIPPED=$(echo "$SUITES_LINE" | grep -o '[0-9]* skipped' | awk '{print $1}')
+SUITES_TOTAL=$(echo "$SUITES_LINE" | grep -o '[0-9]* total' | awk '{print $1}')
 
 # Default to 0 if not found
 TESTS_PASSED=${TESTS_PASSED:-0}

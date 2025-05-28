@@ -37,10 +37,6 @@ module.exports = {
   // Automatically clear mock calls and instances between every test
   clearMocks: true,
   
-  // Set a timeout for tests (30 seconds)
-  // Change testTimeout to timeout
-  timeout: 30000,
-  
   // Configure different test environments for different test files
   projects: [
     {
@@ -50,18 +46,14 @@ module.exports = {
         '**/?(*.)(spec|test).js',
         '!**/e2e/**'
       ],
-      testEnvironment: 'node',
-      // Change testTimeout to timeout
-      timeout: 30000
+      testEnvironment: 'node'
     },
     {
       displayName: 'e2e',
       testMatch: [
         '**/e2e/**/*.js'
       ],
-      testEnvironment: 'node',
-      // Change testTimeout to timeout
-      timeout: 60000
+      testEnvironment: 'node'
     }
   ],
   
