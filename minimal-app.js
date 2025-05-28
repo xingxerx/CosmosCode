@@ -45,6 +45,17 @@ app.get('/api/simulations/:id', (req, res) => {
   res.status(200).json(simulation);
 });
 
+// Add a DELETE endpoint for the delete test
+app.delete('/api/simulations/:id', (req, res) => {
+  const index = simulations.findIndex(s => s.id === req.params.id);
+  if (index === -1) {
+    return res.status(404).json({ error: 'Simulation not found' });
+  }
+  
+  simulations.splice(index, 1);
+  res.status(204).send();
+});
+
 // HTML routes for testing
 app.get('/', (req, res) => {
   res.send(`
