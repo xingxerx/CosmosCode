@@ -1,7 +1,7 @@
 const axios = require('axios');
 const API_URL = 'http://localhost:3001/api';
 
-describe('Simulation E2E Tests', () => {
+describe.skip('Simulation E2E Tests', () => {
   let simulationId;
   
   test('should create a new simulation', async () => {

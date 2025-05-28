@@ -38,7 +38,8 @@ module.exports = {
   clearMocks: true,
   
   // Set a timeout for tests (30 seconds)
-  testTimeout: 30000,
+  // Change testTimeout to timeout
+  timeout: 30000,
   
   // Configure different test environments for different test files
   projects: [
@@ -50,8 +51,8 @@ module.exports = {
         '!**/e2e/**'
       ],
       testEnvironment: 'node',
-      // Set timeout for unit tests
-      testTimeout: 30000
+      // Change testTimeout to timeout
+      timeout: 30000
     },
     {
       displayName: 'e2e',
@@ -59,8 +60,8 @@ module.exports = {
         '**/e2e/**/*.js'
       ],
       testEnvironment: 'node',
-      // Longer timeout for E2E tests
-      testTimeout: 60000
+      // Change testTimeout to timeout
+      timeout: 60000
     }
   ],
   
