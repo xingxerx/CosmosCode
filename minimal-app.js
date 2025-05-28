@@ -69,7 +69,7 @@ app.get('/', (req, res) => {
           results.style.display = 'block';
           
           document.getElementById('results-content').innerHTML = `
-            <p>Simulation ID: sim-${Date.now()}</p>
+           `<p>Simulation ID: sim-${Date.now()}</p>`
             <p>Type: ${type}</p>
             <p>Complexity: ${complexity}</p>
             <p>Particles: ${particles}</p>
