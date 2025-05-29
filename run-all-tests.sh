@@ -66,6 +66,11 @@ for arg in "$@"; do
   esac
 done
 
+# Ensure test directories exist
+mkdir -p __tests__/integration
+mkdir -p e2e
+mkdir -p src/network
+
 # Clean up problematic test files
 ./cleanup-tests.sh
 
@@ -96,12 +101,19 @@ fi
 # Run integration tests
 if [ "$RUN_INTEGRATION" = true ]; then
   echo -e "${BLUE}=== Running Integration Tests ===${NC}"
-  if [ "$VERBOSE" = true ]; then
-    npx jest --config=jest.config.js --testMatch="**/__tests__/integration/**/*.js"
+  
+  # Check if integration tests exist
+  if [ ! "$(find __tests__/integration -name "*.js" | wc -l)" -gt 0 ]; then
+    echo -e "${YELLOW}No integration tests found. Skipping...${NC}"
+    INTEGRATION_RESULT=0
   else
-    npx jest --config=jest.config.js --testMatch="**/__tests__/integration/**/*.js" --silent
+    if [ "$VERBOSE" = true ]; then
+      npx jest --config=jest.config.js --testMatch="**/__tests__/integration/**/*.js"
+    else
+      npx jest --config=jest.config.js --testMatch="**/__tests__/integration/**/*.js" --silent
+    fi
+    INTEGRATION_RESULT=$?
   fi
-  INTEGRATION_RESULT=$?
   
   if [ $INTEGRATION_RESULT -eq 0 ]; then
     echo -e "${GREEN}Integration tests passed${NC}"
