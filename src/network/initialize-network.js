@@ -115,6 +115,23 @@ function initializeNetwork() {
         };
       });
       
+      // Add the new API endpoint for the provided address
+      // For demonstration, let's add it to the first server of the first region
+      if (serverId === 'region-1-server-1') {
+        const providedAddress = '0xCc4ADB618253ED0d4d8A188fB901d70C54735e03';
+        server.addRoute('/api/custom-address', 'GET', () => {
+          return {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              apiIdentifier: providedAddress,
+              description: 'A custom address provided for API purposes.'
+            })
+          };
+        });
+        console.log(`[Network Init] Added /api/custom-address endpoint to ${serverId}, serving ${providedAddress}`);
+      }
+
       // Register domain in DNS
       const domain = `r${i+1}s${j+1}.cosmos`;
       dns.registerDomain(domain, serverId, internet.nodes.get(serverId).ip);
