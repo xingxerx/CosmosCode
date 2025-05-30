@@ -2,9 +2,47 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <nlohmann/json.hpp>
+#include <sstream>
 
-using json = nlohmann::json;
+// Simple JSON implementation without external dependencies
+class SimpleJson {
+public:
+    std::string toString() const {
+        return jsonStr;
+    }
+
+    void addProperty(const std::string& key, const std::string& value) {
+        if (!jsonStr.empty() && jsonStr != "{") {
+            jsonStr += ",";
+        }
+        jsonStr += "\"" + key + "\":\"" + value + "\"";
+    }
+
+    void addProperty(const std::string& key, int value) {
+        if (!jsonStr.empty() && jsonStr != "{") {
+            jsonStr += ",";
+        }
+        jsonStr += "\"" + key + "\":" + std::to_string(value);
+    }
+
+    void addProperty(const std::string& key, bool value) {
+        if (!jsonStr.empty() && jsonStr != "{") {
+            jsonStr += ",";
+        }
+        jsonStr += "\"" + key + "\":" + (value ? "true" : "false");
+    }
+
+    void startObject() {
+        jsonStr = "{";
+    }
+
+    void endObject() {
+        jsonStr += "}";
+    }
+
+private:
+    std::string jsonStr;
+};
 
 class NetworkNode {
 public:
@@ -32,6 +70,17 @@ public:
             return false;
         }
         return true;
+    }
+
+    std::string toJson() {
+        SimpleJson json;
+        json.startObject();
+        json.addProperty("id", id);
+        json.addProperty("type", type);
+        json.addProperty("ip", ip);
+        json.addProperty("active", active);
+        json.endObject();
+        return json.toString();
     }
 };
 
@@ -71,60 +120,98 @@ public:
         return false;
     }
 
-    json getNodeInfo(int index) {
-        json result;
+    std::string getNodeInfo(int index) {
         if (index >= 0 && index < static_cast<int>(nodes.size())) {
-            result["id"] = nodes[index]->id;
-            result["type"] = nodes[index]->type;
-            result["ip"] = nodes[index]->ip;
-            result["active"] = nodes[index]->active;
+            return nodes[index]->toJson();
         }
-        return result;
+        SimpleJson json;
+        json.startObject();
+        json.endObject();
+        return json.toString();
     }
 };
+
+// Simple command parser
+std::string parseCommand(const std::string& input, std::string& command, 
+                         std::string& id, std::string& type, std::string& ip, 
+                         int& index, int& source, int& target, std::string& data) {
+    std::istringstream iss(input);
+    std::string token;
+    
+    if (!(iss >> command)) {
+        return "Invalid command";
+    }
+    
+    if (command == "addNode") {
+        if (!(iss >> id >> type >> ip)) {
+            return "Invalid addNode parameters";
+        }
+    } else if (command == "activateNode" || command == "deactivateNode" || command == "getNodeInfo") {
+        if (!(iss >> index)) {
+            return "Invalid index parameter";
+        }
+    } else if (command == "sendData") {
+        if (!(iss >> source >> target)) {
+            return "Invalid source/target parameters";
+        }
+        
+        // Get the rest of the line as data
+        std::getline(iss >> std::ws, data);
+    } else if (command != "exit") {
+        return "Unknown command";
+    }
+    
+    return "";
+}
 
 int main() {
     NetworkSimulation simulation;
     std::string line;
     
     while (std::getline(std::cin, line)) {
-        try {
-            json input = json::parse(line);
-            json response;
-            
-            std::string command = input["command"];
-            
-            if (command == "addNode") {
-                int index = simulation.addNode(
-                    input["id"], input["type"], input["ip"]);
-                response["result"] = index;
-            } 
-            else if (command == "activateNode") {
-                bool success = simulation.activateNode(input["index"]);
-                response["result"] = success;
-            }
-            else if (command == "deactivateNode") {
-                bool success = simulation.deactivateNode(input["index"]);
-                response["result"] = success;
-            }
-            else if (command == "sendData") {
-                bool success = simulation.sendData(
-                    input["source"], input["target"], input["data"]);
-                response["result"] = success;
-            }
-            else if (command == "getNodeInfo") {
-                response["result"] = simulation.getNodeInfo(input["index"]);
-            }
-            else if (command == "exit") {
-                break;
-            }
-            
-            std::cout << response.dump() << std::endl;
-        } catch (const std::exception& e) {
-            json error;
-            error["error"] = e.what();
-            std::cout << error.dump() << std::endl;
+        std::string command, id, type, ip, data, error;
+        int index = -1, source = -1, target = -1;
+        
+        error = parseCommand(line, command, id, type, ip, index, source, target, data);
+        
+        if (!error.empty()) {
+            SimpleJson response;
+            response.startObject();
+            response.addProperty("error", error);
+            response.endObject();
+            std::cout << response.toString() << std::endl;
+            continue;
         }
+        
+        SimpleJson response;
+        response.startObject();
+        
+        if (command == "addNode") {
+            int result = simulation.addNode(id, type, ip);
+            response.addProperty("result", result);
+        } 
+        else if (command == "activateNode") {
+            bool success = simulation.activateNode(index);
+            response.addProperty("result", success);
+        }
+        else if (command == "deactivateNode") {
+            bool success = simulation.deactivateNode(index);
+            response.addProperty("result", success);
+        }
+        else if (command == "sendData") {
+            bool success = simulation.sendData(source, target, data);
+            response.addProperty("result", success);
+        }
+        else if (command == "getNodeInfo") {
+            std::string nodeInfo = simulation.getNodeInfo(index);
+            response.addProperty("result", nodeInfo);
+        }
+        else if (command == "exit") {
+            break;
+        }
+        
+        response.endObject();
+        std::cout << response.toString() << std::endl;
     }
     
     return 0;
