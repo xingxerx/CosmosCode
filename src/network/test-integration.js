@@ -1,47 +1,42 @@
-const NetworkIntegration = require('./network-integration');
+const { NetworkSimulation } = require('./js-implementation/network-simulation');
+const cppAddon = require('./cpp-addon');
 
-async function runTest() {
-  // Create network integration with default options
-  const network = new NetworkIntegration();
+// Test both implementations
+function testImplementation(name, implementation) {
+  console.log(`\n=== Testing ${name} implementation ===`);
   
-  // Define nodes
-  const nodes = [
-    { id: "server-1", type: "server", ip: "192.168.1.1" },
-    { id: "router-1", type: "router", ip: "192.168.1.254" },
-    { id: "client-1", type: "client", ip: "192.168.1.100" },
-    { id: "client-2", type: "client", ip: "192.168.1.101" }
-  ];
-  
-  // Create simulation
-  await network.createSimulation(nodes);
+  // Add nodes
+  const server = implementation.addNode("server-1", "server", "192.168.1.1");
+  const router = implementation.addNode("router-1", "router", "192.168.1.254");
+  const client1 = implementation.addNode("client-1", "client", "192.168.1.100");
+  const client2 = implementation.addNode("client-2", "client", "192.168.1.101");
   
   // Activate nodes
-  await network.activateNode("server-1");
-  await network.activateNode("router-1");
-  await network.activateNode("client-1");
-  await network.activateNode("client-2");
+  implementation.activateNode(server);
+  implementation.activateNode(router);
+  implementation.activateNode(client1);
+  implementation.activateNode(client2);
+  
+  // Print node info
+  console.log("Server info:", implementation.getNodeInfo(server));
+  console.log("Client info:", implementation.getNodeInfo(client1));
   
   // Send data
-  await network.sendData("client-1", "server-1", "GET /api/data");
-  await network.sendData("server-1", "client-1", "200 OK: {\"data\": [1, 2, 3]}");
+  const success = implementation.sendData(client1, server, "GET /api/data");
+  console.log("Data sent successfully:", success);
   
-  // Deactivate a node
-  await network.deactivateNode("server-1");
-  
-  // Try to send data to inactive node
-  await network.sendData("client-1", "server-1", "GET /api/status");
-  
-  // Run the simulation (only needed for process implementation)
-  await network.runSimulation();
-  
-  // Get node info
-  const serverInfo = await network.getNodeInfo("server-1");
-  console.log("Server info:", serverInfo);
-  
-  const clientInfo = await network.getNodeInfo("client-1");
-  console.log("Client info:", clientInfo);
+  // Deactivate a node and try to send data
+  implementation.deactivateNode(server);
+  const failed = implementation.sendData(client1, server, "GET /api/status");
+  console.log("Data sent successfully:", failed);
 }
 
-runTest().catch(error => {
-  console.error("Test failed:", error);
-});
+// Test JavaScript implementation
+const jsSimulation = new NetworkSimulation();
+testImplementation("JavaScript", jsSimulation);
+
+// Test C++ addon implementation
+const cppSimulation = new cppAddon.NetworkSimulation();
+testImplementation("C++ addon", cppSimulation);
+
+console.log("\nIntegration tests completed");
