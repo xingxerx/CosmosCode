@@ -19,9 +19,6 @@ class NetworkProcessSimulation {
     this.process.on('close', (code) => {
       console.log(`C++ process exited with code ${code}`);
     });
-    
-    this.responseQueue = [];
-    this.waitingForResponse = false;
   }
   
   ensureCompiled() {
@@ -40,15 +37,17 @@ class NetworkProcessSimulation {
   
   async sendCommand(commandStr) {
     return new Promise((resolve, reject) => {
-      this.process.stdout.once('data', (data) => {
+      const responseHandler = (data) => {
         try {
           const response = JSON.parse(data.toString().trim());
+          this.process.stdout.removeListener('data', responseHandler);
           resolve(response);
         } catch (error) {
-          reject(new Error(`Failed to parse response: ${error.message}`));
+          reject(new Error(`Failed to parse response: ${error.message}, Response: ${data.toString().trim()}`));
         }
-      });
+      };
       
+      this.process.stdout.on('data', responseHandler);
       this.process.stdin.write(commandStr + '\n');
     });
   }
@@ -76,8 +75,11 @@ class NetworkProcessSimulation {
   async getNodeInfo(index) {
     const response = await this.sendCommand(`getNodeInfo ${index}`);
     try {
-      // The result might be a JSON string inside a JSON object
-      return JSON.parse(response.result);
+      if (typeof response.result === 'string' && response.result.startsWith('{')) {
+        // The result is a JSON string inside a JSON object
+        return JSON.parse(response.result);
+      }
+      return response.result;
     } catch (error) {
       return response.result;
     }
