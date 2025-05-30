@@ -1,0 +1,1 @@
+cmd_Release/network_simulation.node := ln -f "Release/obj.target/network_simulation.node" "Release/network_simulation.node" 2>/dev/null || (rm -rf "Release/network_simulation.node" && cp -af "Release/obj.target/network_simulation.node" "Release/network_simulation.node")

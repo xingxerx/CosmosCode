@@ -1,0 +1,1 @@
+cmd_Release/obj.target/network_simulation.node := g++ -o Release/obj.target/network_simulation.node -shared -pthread -rdynamic -m64  -Wl,-soname=network_simulation.node -Wl,--start-group Release/obj.target/network_simulation/network_simulation.o -Wl,--end-group 
