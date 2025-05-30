@@ -2,13 +2,22 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <stdexcept>
 
+// Error handling helper
+class NetworkError : public std::runtime_error {
+public:
+    NetworkError(const std::string& message) : std::runtime_error(message) {}
+};
+
+// Improved NetworkNode class
 class NetworkNode {
 public:
     std::string id;
     std::string type;
     std::string ip;
     bool active;
+    std::vector<std::string> connections;
 
     NetworkNode(std::string id, std::string type, std::string ip)
         : id(id), type(type), ip(ip), active(false) {}
@@ -23,12 +32,30 @@ public:
 
     bool sendData(NetworkNode& target, const std::string& data) {
         if (!active) {
-            return false;
+            throw NetworkError("Source node is not active");
         }
         if (!target.active) {
-            return false;
+            throw NetworkError("Target node is not active");
         }
+        
+        // Check if nodes are connected
+        bool connected = false;
+        for (const auto& conn : connections) {
+            if (conn == target.id) {
+                connected = true;
+                break;
+            }
+        }
+        
+        if (!connected) {
+            throw NetworkError("Nodes are not connected");
+        }
+        
         return true;
+    }
+    
+    void addConnection(const std::string& targetId) {
+        connections.push_back(targetId);
     }
 };
 

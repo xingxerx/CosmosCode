@@ -7,6 +7,38 @@ class NetworkNode {
     this.type = type;
     this.ip = ip;
     this.active = false;
+    this.connections = [];
+    this.properties = this._initializeProperties(type);
+  }
+  
+  _initializeProperties(type) {
+    // Set default properties based on node type
+    switch(type) {
+      case 'firewall':
+        return {
+          packetInspection: true,
+          blockUnauthorized: true,
+          throughput: 1000 // Mbps
+        };
+      case 'loadbalancer':
+        return {
+          algorithm: 'round-robin',
+          maxConnections: 1000,
+          healthCheck: true
+        };
+      case 'router':
+        return {
+          forwardingTable: {},
+          maxRoutes: 1000,
+          bandwidth: 2000 // Mbps
+        };
+      case 'server':
+      case 'client':
+      default:
+        return {
+          bandwidth: 100 // Mbps
+        };
+    }
   }
   
   activate() {
@@ -25,6 +57,15 @@ class NetworkNode {
       return false;
     }
     return true;
+  }
+  
+  // Add connection to another node
+  connect(targetNode) {
+    if (!this.connections.includes(targetNode.id)) {
+      this.connections.push(targetNode.id);
+      return true;
+    }
+    return false;
   }
 }
 
