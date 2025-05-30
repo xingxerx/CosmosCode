@@ -1,42 +1,82 @@
-const { NetworkSimulation } = require('./js-implementation/network-simulation');
-const cppAddon = require('./cpp-addon');
+const JSNetworkSimulation = require('./js-implementation/network-simulation');
+const { NetworkProcessSimulation } = require('./cpp-process/network-process-wrapper');
 
-// Test both implementations
-function testImplementation(name, implementation) {
-  console.log(`\n=== Testing ${name} implementation ===`);
+async function testJSImplementation() {
+  console.log("\n=== Testing JavaScript implementation ===");
+  
+  const simulation = new JSNetworkSimulation();
   
   // Add nodes
-  const server = implementation.addNode("server-1", "server", "192.168.1.1");
-  const router = implementation.addNode("router-1", "router", "192.168.1.254");
-  const client1 = implementation.addNode("client-1", "client", "192.168.1.100");
-  const client2 = implementation.addNode("client-2", "client", "192.168.1.101");
+  const serverIndex = simulation.addNode('server-1', 'server', '192.168.1.1');
+  const clientIndex = simulation.addNode('client-1', 'client', '192.168.1.100');
   
   // Activate nodes
-  implementation.activateNode(server);
-  implementation.activateNode(router);
-  implementation.activateNode(client1);
-  implementation.activateNode(client2);
+  simulation.activateNode(serverIndex);
+  simulation.activateNode(clientIndex);
   
-  // Print node info
-  console.log("Server info:", implementation.getNodeInfo(server));
-  console.log("Client info:", implementation.getNodeInfo(client1));
+  // Get node info
+  const serverInfo = simulation.getNodeInfo(serverIndex);
+  const clientInfo = simulation.getNodeInfo(clientIndex);
+  
+  console.log("Server info:", serverInfo);
+  console.log("Client info:", clientInfo);
   
   // Send data
-  const success = implementation.sendData(client1, server, "GET /api/data");
-  console.log("Data sent successfully:", success);
+  const sendResult1 = simulation.sendData(clientIndex, serverIndex, "Hello server");
+  console.log("Data sent successfully:", sendResult1);
   
-  // Deactivate a node and try to send data
-  implementation.deactivateNode(server);
-  const failed = implementation.sendData(client1, server, "GET /api/status");
-  console.log("Data sent successfully:", failed);
+  // Deactivate server
+  simulation.deactivateNode(serverIndex);
+  
+  // Try to send data again
+  const sendResult2 = simulation.sendData(clientIndex, serverIndex, "Hello again");
+  console.log("Data sent successfully:", sendResult2);
 }
 
-// Test JavaScript implementation
-const jsSimulation = new NetworkSimulation();
-testImplementation("JavaScript", jsSimulation);
+async function testCppImplementation() {
+  console.log("\n=== Testing C++ addon implementation ===");
+  
+  try {
+    const simulation = new NetworkProcessSimulation();
+    
+    // Add nodes
+    const serverIndex = await simulation.addNode('server-1', 'server', '192.168.1.1');
+    const clientIndex = await simulation.addNode('client-1', 'client', '192.168.1.100');
+    
+    // Activate nodes
+    await simulation.activateNode(serverIndex);
+    await simulation.activateNode(clientIndex);
+    
+    // Get node info
+    const serverInfo = await simulation.getNodeInfo(serverIndex);
+    const clientInfo = await simulation.getNodeInfo(clientIndex);
+    
+    console.log("Server info:", serverInfo);
+    console.log("Client info:", clientInfo);
+    
+    // Send data
+    const sendResult1 = await simulation.sendData(clientIndex, serverIndex, "Hello server");
+    console.log("Data sent successfully:", sendResult1);
+    
+    // Deactivate server
+    await simulation.deactivateNode(serverIndex);
+    
+    // Try to send data again
+    const sendResult2 = await simulation.sendData(clientIndex, serverIndex, "Hello again");
+    console.log("Data sent successfully:", sendResult2);
+    
+    // Close the simulation
+    simulation.close();
+  } catch (error) {
+    console.error("C++ implementation test failed:", error.message);
+  }
+}
 
-// Test C++ addon implementation
-const cppSimulation = new cppAddon.NetworkSimulation();
-testImplementation("C++ addon", cppSimulation);
+async function runIntegrationTests() {
+  await testJSImplementation();
+  await testCppImplementation();
+  
+  console.log("\nIntegration tests completed");
+}
 
-console.log("\nIntegration tests completed");
+runIntegrationTests();

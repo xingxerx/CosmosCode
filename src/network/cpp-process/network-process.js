@@ -4,7 +4,7 @@ const fs = require('fs');
 
 class NetworkSimulationProcess {
   constructor() {
-    this.executablePath = path.join(__dirname, 'network_sim');
+    this.executablePath = path.join(__dirname, 'network_process');
     this.inputFile = path.join(__dirname, 'network_input.json');
     this.outputFile = path.join(__dirname, 'network_output.json');
     
@@ -16,26 +16,13 @@ class NetworkSimulationProcess {
     // Check if executable exists, if not compile it
     if (!fs.existsSync(this.executablePath)) {
       console.log('Compiling network simulation executable...');
-      const compile = spawn('g++', [
-        path.join(__dirname, 'network_sim.cpp'),
-        '-o', this.executablePath
-      ]);
-      
-      compile.stdout.on('data', (data) => {
-        console.log(`Compiler output: ${data}`);
-      });
-      
-      compile.stderr.on('data', (data) => {
-        console.error(`Compiler error: ${data}`);
-      });
-      
-      compile.on('close', (code) => {
-        if (code !== 0) {
-          console.error(`Compilation failed with code ${code}`);
-        } else {
-          console.log('Compilation successful');
-        }
-      });
+      const { execSync } = require('child_process');
+      try {
+        execSync(`make -C ${__dirname}`);
+        console.log('Compilation successful');
+      } catch (error) {
+        console.error('Compilation failed:', error.message);
+      }
     }
   }
   

@@ -1,39 +1,43 @@
-const NetworkSimulationProcess = require('./network-process');
+const { NetworkProcessSimulation } = require('./network-process-wrapper');
 
 async function runTest() {
-  const simulation = new NetworkSimulationProcess();
-  
-  // Define network configuration
-  const config = {
-    nodes: [
-      { id: "server-1", type: "server", ip: "192.168.1.1" },
-      { id: "router-1", type: "router", ip: "192.168.1.254" },
-      { id: "client-1", type: "client", ip: "192.168.1.100" },
-      { id: "client-2", type: "client", ip: "192.168.1.101" }
-    ],
-    actions: [
-      { type: "activate", nodeIndex: 0 },  // Activate server
-      { type: "activate", nodeIndex: 1 },  // Activate router
-      { type: "activate", nodeIndex: 2 },  // Activate client-1
-      { type: "activate", nodeIndex: 3 },  // Activate client-2
-      { type: "sendData", sourceIndex: 2, targetIndex: 0, data: "GET /api/data" },
-      { type: "sendData", sourceIndex: 0, targetIndex: 2, data: "200 OK: {\"data\": [1, 2, 3]}" },
-      { type: "deactivate", nodeIndex: 0 },  // Deactivate server
-      { type: "sendData", sourceIndex: 2, targetIndex: 0, data: "GET /api/status" }
-    ]
-  };
+  console.log("Running network simulation...");
   
   try {
-    console.log("Running network simulation...");
-    const result = await simulation.runSimulation(config);
+    const simulation = new NetworkProcessSimulation();
     
-    console.log("\nSimulation output:");
-    console.log(result.stdout);
+    // Add nodes
+    const serverIndex = await simulation.addNode('server-1', 'server', '192.168.1.1');
+    const clientIndex = await simulation.addNode('client-1', 'client', '192.168.1.100');
     
-    console.log("\nSimulation results:");
-    console.log(JSON.stringify(result.results, null, 2));
+    // Activate nodes
+    await simulation.activateNode(serverIndex);
+    await simulation.activateNode(clientIndex);
+    
+    // Get node info
+    const serverInfo = await simulation.getNodeInfo(serverIndex);
+    const clientInfo = await simulation.getNodeInfo(clientIndex);
+    
+    console.log("Server info:", serverInfo);
+    console.log("Client info:", clientInfo);
+    
+    // Send data
+    const sendResult1 = await simulation.sendData(clientIndex, serverIndex, "Hello server");
+    console.log("Data sent successfully:", sendResult1);
+    
+    // Deactivate server
+    await simulation.deactivateNode(serverIndex);
+    
+    // Try to send data again
+    const sendResult2 = await simulation.sendData(clientIndex, serverIndex, "Hello again");
+    console.log("Data sent successfully:", sendResult2);
+    
+    // Close the simulation
+    simulation.close();
+    
+    console.log("C++ process implementation test completed");
   } catch (error) {
-    console.error("Simulation failed:", error.message);
+    console.error("Test failed:", error.message);
   }
 }
 
