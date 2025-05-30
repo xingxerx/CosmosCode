@@ -1,0 +1,14 @@
+{
+  "name": "network-simulation-addon",
+  "version": "1.0.0",
+  "description": "C++ addon for network simulation",
+  "main": "index.js",
+  "scripts": {
+    "install": "node-gyp rebuild",
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "node-addon-api": "^5.0.0",
+    "bindings": "^1.5.0"
+  }
+}
