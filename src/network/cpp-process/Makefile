@@ -1,15 +1,5 @@
-CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra
-
-TARGET = network_process
-SRC = network_process.cpp
-
-all: $(TARGET)
-
-$(TARGET): $(SRC)
-    $(CXX) $(CXXFLAGS) -o $@ $^
+all:
+    g++ -std=c++17 -Wall -Wextra -o network_process network_process.cpp
 
 clean:
-    rm -f $(TARGET)
-
-.PHONY: all clean
+    rm -f network_process

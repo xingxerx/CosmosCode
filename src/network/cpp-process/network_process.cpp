@@ -4,46 +4,6 @@
 #include <memory>
 #include <sstream>
 
-// Simple JSON implementation without external dependencies
-class SimpleJson {
-public:
-    std::string toString() const {
-        return jsonStr;
-    }
-
-    void addProperty(const std::string& key, const std::string& value) {
-        if (!jsonStr.empty() && jsonStr != "{") {
-            jsonStr += ",";
-        }
-        jsonStr += "\"" + key + "\":\"" + value + "\"";
-    }
-
-    void addProperty(const std::string& key, int value) {
-        if (!jsonStr.empty() && jsonStr != "{") {
-            jsonStr += ",";
-        }
-        jsonStr += "\"" + key + "\":" + std::to_string(value);
-    }
-
-    void addProperty(const std::string& key, bool value) {
-        if (!jsonStr.empty() && jsonStr != "{") {
-            jsonStr += ",";
-        }
-        jsonStr += "\"" + key + "\":" + (value ? "true" : "false");
-    }
-
-    void startObject() {
-        jsonStr = "{";
-    }
-
-    void endObject() {
-        jsonStr += "}";
-    }
-
-private:
-    std::string jsonStr;
-};
-
 class NetworkNode {
 public:
     std::string id;
@@ -70,17 +30,6 @@ public:
             return false;
         }
         return true;
-    }
-
-    std::string toJson() {
-        SimpleJson json;
-        json.startObject();
-        json.addProperty("id", id);
-        json.addProperty("type", type);
-        json.addProperty("ip", ip);
-        json.addProperty("active", active);
-        json.endObject();
-        return json.toString();
     }
 };
 
@@ -120,14 +69,11 @@ public:
         return false;
     }
 
-    std::string getNodeInfo(int index) {
+    std::shared_ptr<NetworkNode> getNode(int index) {
         if (index >= 0 && index < static_cast<int>(nodes.size())) {
-            return nodes[index]->toJson();
+            return nodes[index];
         }
-        SimpleJson json;
-        json.startObject();
-        json.endObject();
-        return json.toString();
+        return nullptr;
     }
 };
 
@@ -175,43 +121,39 @@ int main() {
         error = parseCommand(line, command, id, type, ip, index, source, target, data);
         
         if (!error.empty()) {
-            SimpleJson response;
-            response.startObject();
-            response.addProperty("error", error);
-            response.endObject();
-            std::cout << response.toString() << std::endl;
+            std::cout << "{\"error\":\"" << error << "\"}" << std::endl;
             continue;
         }
         
-        SimpleJson response;
-        response.startObject();
-        
         if (command == "addNode") {
             int result = simulation.addNode(id, type, ip);
-            response.addProperty("result", result);
+            std::cout << "{\"result\":" << result << "}" << std::endl;
         } 
         else if (command == "activateNode") {
             bool success = simulation.activateNode(index);
-            response.addProperty("result", success);
+            std::cout << "{\"result\":" << (success ? "true" : "false") << "}" << std::endl;
         }
         else if (command == "deactivateNode") {
             bool success = simulation.deactivateNode(index);
-            response.addProperty("result", success);
+            std::cout << "{\"result\":" << (success ? "true" : "false") << "}" << std::endl;
         }
         else if (command == "sendData") {
             bool success = simulation.sendData(source, target, data);
-            response.addProperty("result", success);
+            std::cout << "{\"result\":" << (success ? "true" : "false") << "}" << std::endl;
         }
         else if (command == "getNodeInfo") {
-            std::string nodeInfo = simulation.getNodeInfo(index);
-            response.addProperty("result", nodeInfo);
+            auto node = simulation.getNode(index);
+            if (node) {
+                std::cout << "{\"id\":\"" << node->id << "\",\"type\":\"" << node->type 
+                          << "\",\"ip\":\"" << node->ip << "\",\"active\":" 
+                          << (node->active ? "true" : "false") << "}" << std::endl;
+            } else {
+                std::cout << "{\"result\":{}}" << std::endl;
+            }
         }
         else if (command == "exit") {
             break;
         }
-        
-        response.endObject();
-        std::cout << response.toString() << std::endl;
     }
     
     return 0;

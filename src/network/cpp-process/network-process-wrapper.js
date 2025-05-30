@@ -1,6 +1,7 @@
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const { execSync } = require('child_process');
 
 class NetworkProcessSimulation {
   constructor() {
@@ -25,8 +26,8 @@ class NetworkProcessSimulation {
     // Check if executable exists, if not compile it
     if (!fs.existsSync(this.executablePath)) {
       console.log('Compiling network simulation executable...');
-      const { execSync } = require('child_process');
       try {
+        // Use direct g++ command instead of make
         execSync(`g++ -std=c++17 -o ${this.executablePath} ${path.join(__dirname, 'network_process.cpp')}`);
         console.log('Compilation successful');
       } catch (error) {
@@ -37,13 +38,21 @@ class NetworkProcessSimulation {
   
   async sendCommand(commandStr) {
     return new Promise((resolve, reject) => {
+      let responseData = '';
+      
       const responseHandler = (data) => {
-        try {
-          const response = JSON.parse(data.toString().trim());
-          this.process.stdout.removeListener('data', responseHandler);
-          resolve(response);
-        } catch (error) {
-          reject(new Error(`Failed to parse response: ${error.message}, Response: ${data.toString().trim()}`));
+        responseData += data.toString().trim();
+        
+        // Check if we have a complete JSON object
+        if (responseData.startsWith('{') && responseData.endsWith('}')) {
+          try {
+            const response = JSON.parse(responseData);
+            this.process.stdout.removeListener('data', responseHandler);
+            resolve(response);
+          } catch (error) {
+            this.process.stdout.removeListener('data', responseHandler);
+            reject(new Error(`Failed to parse response: ${error.message}, Response: ${responseData}`));
+          }
         }
       };
       
@@ -74,15 +83,19 @@ class NetworkProcessSimulation {
   
   async getNodeInfo(index) {
     const response = await this.sendCommand(`getNodeInfo ${index}`);
-    try {
-      if (typeof response.result === 'string' && response.result.startsWith('{')) {
-        // The result is a JSON string inside a JSON object
-        return JSON.parse(response.result);
-      }
-      return response.result;
-    } catch (error) {
+    
+    // If we have a result property, it's the old format (empty object)
+    if (response.hasOwnProperty('result')) {
       return response.result;
     }
+    
+    // Otherwise, we have the node properties directly
+    return {
+      id: response.id,
+      type: response.type,
+      ip: response.ip,
+      active: response.active
+    };
   }
   
   close() {

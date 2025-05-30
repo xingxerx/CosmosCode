@@ -1,7 +1,7 @@
 const NetworkSimulation = require('./network-simulation');
 
 function runTest() {
-  console.log("Running JavaScript network simulation...");
+  console.log('Running JavaScript network simulation...');
   
   const simulation = new NetworkSimulation();
   
@@ -15,23 +15,21 @@ function runTest() {
   
   // Get node info
   const serverInfo = simulation.getNodeInfo(serverIndex);
-  const clientInfo = simulation.getNodeInfo(clientIndex);
+  console.log('Server info:', serverInfo);
   
-  console.log("Server info:", serverInfo);
-  console.log("Client info:", clientInfo);
+  const clientInfo = simulation.getNodeInfo(clientIndex);
+  console.log('Client info:', clientInfo);
   
   // Send data
-  const sendResult1 = simulation.sendData(clientIndex, serverIndex, "Hello server");
-  console.log("Data sent successfully:", sendResult1);
+  const successResult = simulation.sendData(serverIndex, clientIndex, 'Hello, client!');
+  console.log('Data sent successfully:', successResult);
   
-  // Deactivate server
-  simulation.deactivateNode(serverIndex);
+  // Deactivate client and try to send data again
+  simulation.deactivateNode(clientIndex);
+  const failResult = simulation.sendData(serverIndex, clientIndex, 'Hello again!');
+  console.log('Data sent successfully:', failResult);
   
-  // Try to send data again
-  const sendResult2 = simulation.sendData(clientIndex, serverIndex, "Hello again");
-  console.log("Data sent successfully:", sendResult2);
-  
-  console.log("JS implementation test completed");
+  console.log('JS implementation test completed');
 }
 
 runTest();
