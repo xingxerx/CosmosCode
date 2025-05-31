@@ -112,4 +112,4 @@ class NetworkSimulation {
   }
 }
 
-module.exports = NetworkSimulation;
+module.exports = { NetworkSimulation };
