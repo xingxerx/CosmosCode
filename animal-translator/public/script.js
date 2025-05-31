@@ -1,66 +1,102 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const translateBtn = document.getElementById('translateBtn');
-  const inputText = document.getElementById('inputText');
-  const direction = document.getElementById('direction');
-  const animal = document.getElementById('animal');
-  const result = document.getElementById('result');
-  const outputText = document.getElementById('outputText');
-  const loading = document.getElementById('loading');
-  const errorMessage = document.getElementById('errorMessage');
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('translation-form');
+  const resultDiv = document.getElementById('translation-result');
+  const apiStatusDiv = document.getElementById('api-status');
+  const resetButton = document.getElementById('reset-api');
   
-  translateBtn.addEventListener('click', async () => {
-    const text = inputText.value.trim();
-    
-    if (!text) {
-      showError('Please enter some text to translate');
-      return;
-    }
-    
-    // Show loading indicator
-    loading.style.display = 'block';
-    errorMessage.style.display = 'none';
-    result.style.display = 'none';
-    
-    try {
-      const response = await fetch('/translate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          text,
-          direction: direction.value,
-          animal: animal.value
-        })
-      });
+  if (form) {
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
       
-      const data = await response.json();
+      const text = document.getElementById('text').value;
+      const animal = document.getElementById('animal').value;
+      const direction = document.querySelector('input[name="direction"]:checked').value;
       
-      if (!response.ok) {
-        throw new Error(data.details || data.error || 'Translation failed');
+      if (!text || !animal || !direction) {
+        resultDiv.innerHTML = '<p class="error">Please fill out all fields</p>';
+        return;
       }
       
-      // Display result
-      outputText.textContent = data.translation;
-      result.style.display = 'block';
+      resultDiv.innerHTML = '<p>Translating...</p>';
       
-      // If it's a fallback response, add a warning class
-      if (data.isFallback) {
-        result.classList.add('api-limited');
-      } else {
-        result.classList.remove('api-limited');
+      try {
+        const response = await fetch('/api/translate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ text, animal, direction })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+          resultDiv.innerHTML = `<p class="error">${data.error}</p>`;
+          return;
+        }
+        
+        // Update the translation result
+        resultDiv.innerHTML = `
+          <h3>Translation:</h3>
+          <p class="translation">${data.translation}</p>
+          ${data.fallback ? '<p class="fallback-notice">This is a fallback translation. The AI is currently rate-limited.</p>' : ''}
+        `;
+        
+        // Update API status
+        updateApiStatus(data.apiStatus);
+        
+      } catch (error) {
+        resultDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
       }
-      
-    } catch (error) {
-      showError(error.message);
-    } finally {
-      loading.style.display = 'none';
-    }
-  });
+    });
+  }
   
-  function showError(message) {
-    errorMessage.textContent = message;
-    errorMessage.style.display = 'block';
-    result.style.display = 'none';
+  // Add event listener for reset button
+  if (resetButton) {
+    resetButton.addEventListener('click', async function() {
+      try {
+        resetButton.disabled = true;
+        resetButton.textContent = 'Resetting...';
+        
+        const response = await fetch('/api/reset', {
+          method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          apiStatusDiv.innerHTML = '<p class="status pending">API connection will reset on next request</p>';
+        } else {
+          apiStatusDiv.innerHTML = `<p class="status error">Reset failed: ${data.error}</p>`;
+        }
+      } catch (error) {
+        apiStatusDiv.innerHTML = `<p class="status error">Reset failed: ${error.message}</p>`;
+      } finally {
+        resetButton.disabled = false;
+        resetButton.textContent = 'Reset API Connection';
+      }
+    });
+  }
+  
+  function updateApiStatus(status) {
+    if (!apiStatusDiv) return;
+    
+    let statusHtml = '';
+    
+    switch(status) {
+      case 'active':
+        statusHtml = '<p class="status active">API Status: Active</p>';
+        break;
+      case 'limited':
+        statusHtml = '<p class="status limited">API Status: Rate Limited</p>';
+        break;
+      case 'error':
+        statusHtml = '<p class="status error">API Status: Error</p>';
+        break;
+      default:
+        statusHtml = '<p class="status unknown">API Status: Unknown</p>';
+    }
+    
+    apiStatusDiv.innerHTML = statusHtml;
   }
 });

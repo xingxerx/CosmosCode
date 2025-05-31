@@ -9,13 +9,13 @@ const path = require('path');
 
 // Configuration
 const PORT = 3001;
-const SERVER_PATH = path.join(__dirname, 'src', 'index.js');
+const SERVER_PATH = path.join(__dirname, 'src', 'network', 'network-server.js');
 
 // Set environment variables
 process.env.PORT = PORT;
 process.env.NODE_ENV = 'development';
 
-console.log(`Starting server on port ${PORT}...`);
+console.log(`Starting network visualization server on port ${PORT}...`);
 console.log(`Server path: ${SERVER_PATH}`);
 
 // Start the server
@@ -28,8 +28,14 @@ server.on('error', (err) => {
   console.error('Failed to start server:', err);
 });
 
-server.on('close', (code) => {
-  console.log(`Server process exited with code ${code}`);
+server.on('exit', (code, signal) => {
+  if (code) {
+    console.error(`Server process exited with code ${code}`);
+  } else if (signal) {
+    console.error(`Server process was killed with signal ${signal}`);
+  } else {
+    console.log('Server process exited successfully');
+  }
 });
 
 console.log('Server process started. Press Ctrl+C to stop.');

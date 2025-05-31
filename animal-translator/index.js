@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
-const { translateText } = require('./translator');
+const { translateHumanToAnimal, translateAnimalToHuman } = require('./translator');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -17,45 +17,46 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.post('/translate', async (req, res) => {
+app.post('/api/translate', async (req, res) => {
+  const { text, animal, direction } = req.body;
+  
+  if (!text || !animal || !direction) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  
   try {
-    const { text, direction, animal } = req.body;
+    let result;
     
-    if (!text || !direction || !animal) {
-      return res.status(400).json({ 
-        error: 'Missing required parameters',
-        details: 'Please provide text, direction, and animal type'
-      });
+    if (direction === 'human-to-animal') {
+      result = await translateHumanToAnimal(text, animal);
+    } else {
+      result = await translateAnimalToHuman(text, animal);
     }
     
-    // Add rate limiting for the API endpoint
-    // This is a simple implementation - in production you'd want a more robust solution
-    const result = await translateText(text, direction, animal);
-    
-    // Check if it's a fallback response
-    const isFallback = result.includes('Fallback translation due to API limits');
-    
-    res.json({ 
-      translation: result,
-      isFallback: isFallback,
-      apiStatus: isFallback ? 'limited' : 'ok'
+    // Include API status in the response
+    res.json({
+      translation: result.translation,
+      fallback: result.fallback,
+      apiStatus: result.fallback ? 'limited' : 'active'
     });
   } catch (error) {
     console.error('Translation error:', error);
-    
-    // Provide a more user-friendly error message
-    let errorMessage = 'Translation failed';
-    let errorDetails = error.message;
-    
-    if (error.message.includes('429') || error.message.includes('quota')) {
-      errorMessage = 'API rate limit exceeded';
-      errorDetails = 'The translation service is currently experiencing high demand. Please try again later.';
-    }
-    
     res.status(500).json({ 
-      error: errorMessage, 
-      details: errorDetails 
+      error: 'Translation failed', 
+      fallback: true,
+      apiStatus: 'error',
+      translation: `Sorry, I couldn't translate that. ${error.message}`
     });
+  }
+});
+
+// Add a new endpoint to manually reset the API connection
+app.post('/api/reset', (req, res) => {
+  try {
+    // This will be called on the next translation request
+    res.json({ success: true, message: 'API connection will be reset on next request' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

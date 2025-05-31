@@ -1,93 +1,112 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const dotenv = require('dotenv');
 
-// Initialize the Gemini API
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy-key-for-tests');
+dotenv.config();
 
-// Animal sound dictionary for reference
-const animalSounds = {
-  dog: { sound: "bark/woof", description: "Dogs communicate through barks, growls, whines and body language" },
-  cat: { sound: "meow", description: "Cats use meows, purrs, hisses and body postures to communicate" },
-  cow: { sound: "moo", description: "Cows communicate with moos of varying pitch and duration" },
-  chicken: { sound: "cluck/bawk", description: "Chickens use different clucks and calls for various situations" },
-  horse: { sound: "neigh/whinny", description: "Horses communicate through whinnies, nickers, and snorts" },
-  pig: { sound: "oink", description: "Pigs use grunts and squeals of different intensities" },
-  sheep: { sound: "baa", description: "Sheep communicate with bleats of varying tones" },
-  goat: { sound: "maa", description: "Goats use bleats and calls of different pitches" },
-  duck: { sound: "quack", description: "Ducks communicate through quacks and other vocalizations" },
-  frog: { sound: "ribbit/croak", description: "Frogs use croaks and calls, often to attract mates" }
-};
+// Initialize the API with your key
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
 
-/**
- * Generates a fallback response when the API is unavailable
- * @param {string} text - The text to translate
- * @param {string} direction - Either "human-to-animal" or "animal-to-human"
- * @param {string} animal - The type of animal
- * @returns {string} - A fallback translation
- */
-function generateFallbackResponse(text, direction, animal) {
-  const animalType = animal.toLowerCase();
-  const animalInfo = animalSounds[animalType] || { sound: "unknown" };
-  
-  if (direction === 'human-to-animal') {
-    const sounds = animalInfo.sound.split('/')[0]; // Take the first sound if multiple
-    return `${sounds} ${sounds}! (Fallback translation due to API limits)`;
-  } else {
-    return `The ${animalType} seems to be trying to communicate something. (Fallback translation due to API limits)`;
-  }
+// Retry configuration
+let retryCount = 0;
+const maxRetries = 5;
+const initialRetryDelay = 1000; // 1 second
+
+// Function to reset the API connection
+function resetApiConnection() {
+  console.log('Resetting API connection...');
+  // Re-initialize the API client
+  const newGenAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  return newGenAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
 }
 
-/**
- * Translates text between human language and animal sounds
- * @param {string} text - The text to translate
- * @param {string} direction - Either "human-to-animal" or "animal-to-human"
- * @param {string} animal - The type of animal (e.g., "dog", "cat")
- * @returns {Promise<string>} - The translated text
- */
-async function translateText(text, direction, animal) {
-  // Normalize animal type to lowercase
-  const animalType = animal.toLowerCase();
-  
+// Translate with retry logic
+async function translateWithRetry(prompt, retryAttempt = 0) {
   try {
-    // Get animal information
-    const animalInfo = animalSounds[animalType] || 
-      { sound: "unknown", description: `${animalType}s communicate in their own way` };
+    // Use a new model instance if we're retrying
+    const currentModel = retryAttempt > 0 ? resetApiConnection() : model;
     
-    // Create prompt based on direction
-    let prompt;
-    if (direction === 'human-to-animal') {
-      prompt = `You are an expert in animal communication for ${animalType}s. 
-      ${animalInfo.description}. 
-      Translate the following human text into how a ${animalType} might express it using their sounds and behavior.
-      Be creative but realistic about how ${animalType}s actually communicate.
-      Human text: "${text}"
-      ${animalType} translation:`;
-    } else {
-      prompt = `You are an expert in animal communication for ${animalType}s.
-      ${animalInfo.description}.
-      The following text represents ${animalType} sounds and behavior.
-      Translate it into human language, interpreting what the ${animalType} might be trying to communicate.
-      ${animalType} sounds: "${text}"
-      Human translation:`;
-    }
-
-    // Get Gemini model
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-    
-    // Generate response
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    return response.text();
+    const result = await currentModel.generateContent(prompt);
+    retryCount = 0; // Reset retry count on success
+    return result.response.text();
   } catch (error) {
-    console.error('Gemini API error:', error.message);
+    console.error(`Gemini API error: ${error}`);
     
-    // Check if it's a rate limit error
-    if (error.message.includes('429') || error.message.includes('quota') || error.message.includes('rate limit')) {
-      return generateFallbackResponse(text, direction, animal);
+    // Check if it's a rate limit error (429)
+    if (error.message && error.message.includes('429') && retryAttempt < maxRetries) {
+      const delay = initialRetryDelay * Math.pow(2, retryAttempt);
+      console.log(`Rate limited. Retrying in ${delay/1000} seconds... (Attempt ${retryAttempt + 1}/${maxRetries})`);
+      
+      // Wait for the specified delay
+      await new Promise(resolve => setTimeout(resolve, delay));
+      
+      // Retry with incremented attempt count
+      return translateWithRetry(prompt, retryAttempt + 1);
     }
     
-    // Re-throw other errors
-    throw error;
+    // If we've exhausted retries or it's not a rate limit error, use fallback
+    return null;
   }
 }
 
-module.exports = { translateText };
+async function translateHumanToAnimal(text, animal) {
+  const prompt = `Translate the following human text into ${animal} sounds. 
+  Be creative and use onomatopoeia to represent how a ${animal} might express this message.
+  Human text: "${text}"
+  ${animal} translation:`;
+
+  try {
+    const translation = await translateWithRetry(prompt);
+    if (translation) {
+      return { translation, fallback: false };
+    }
+  } catch (error) {
+    console.error(`Translation error: ${error}`);
+  }
+
+  // Fallback translations
+  const fallbacks = {
+    dog: "Woof woof! Bark! Grr... *wags tail* Arf arf!",
+    cat: "Meow... Purrrr... *hiss* Mrow! Meow meow.",
+    cow: "Moooooo! Moo moo. *snorts* Mooooo!",
+    bird: "Tweet! Chirp chirp! *whistles* Caw! Tweet tweet!",
+    horse: "Neigh! *whinnies* Snort! Neigh neigh!",
+    pig: "Oink oink! *snorts* Squeal! Oink!",
+    sheep: "Baaaa! Baa baa! *bleats* Baaaaa!",
+    goat: "Maaaa! Bleat! *bleats loudly* Maaaaa!",
+    duck: "Quack quack! *waddles* Quaaaack! Quack!",
+    chicken: "Cluck cluck! Bawk! *pecks* Cock-a-doodle-doo!"
+  };
+
+  return { 
+    translation: fallbacks[animal] || "Animal sounds...", 
+    fallback: true 
+  };
+}
+
+async function translateAnimalToHuman(text, animal) {
+  const prompt = `Translate the following ${animal} sounds into human language. 
+  Be creative and imagine what a ${animal} might be trying to communicate with these sounds.
+  ${animal} sounds: "${text}"
+  Human translation:`;
+
+  try {
+    const translation = await translateWithRetry(prompt);
+    if (translation) {
+      return { translation, fallback: false };
+    }
+  } catch (error) {
+    console.error(`Translation error: ${error}`);
+  }
+
+  // Fallback translations
+  return { 
+    translation: `I think the ${animal} is trying to say: "Hello human! I'm hungry and want some attention. Please take care of me!"`, 
+    fallback: true 
+  };
+}
+
+module.exports = {
+  translateHumanToAnimal,
+  translateAnimalToHuman
+};
