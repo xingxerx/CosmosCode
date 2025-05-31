@@ -5,7 +5,7 @@ const path = require('path');
 const { translateText } = require('./translator');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001; // Changed default port to 3001
 
 // Middleware
 app.use(bodyParser.json());

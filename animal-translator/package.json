@@ -15,5 +15,9 @@
   },
   "devDependencies": {
     "jest": "^29.7.0"
-  }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
 }
