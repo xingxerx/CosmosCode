@@ -1,59 +1,201 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Animal Translator</title>
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animal Translator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, textarea, button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #4CAF50;
+        }
+        .error {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+        .loading {
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+        .api-limited {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+        .animal-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🐾 Animal Translator 🐾</h1>
-    
-    <div class="translator-container">
-      <div class="form-group">
-        <label for="animal-select">Select Animal:</label>
-        <select id="animal-select">
-          <option value="dog">Dog 🐕</option>
-          <option value="cat">Cat 🐱</option>
-          <option value="cow">Cow 🐄</option>
-          <option value="chicken">Chicken 🐔</option>
-          <option value="horse">Horse 🐎</option>
-          <option value="pig">Pig 🐖</option>
-          <option value="sheep">Sheep 🐑</option>
-          <option value="goat">Goat 🐐</option>
-          <option value="duck">Duck 🦆</option>
-          <option value="frog">Frog 🐸</option>
-        </select>
-      </div>
-      
-      <div class="form-group">
-        <label for="direction-select">Translation Direction:</label>
-        <select id="direction-select">
-          <option value="human-to-animal">Human → Animal</option>
-          <option value="animal-to-human">Animal → Human</option>
-        </select>
-      </div>
-      
-      <div class="text-areas">
-        <div class="input-area">
-          <label for="input-text">Input:</label>
-          <textarea id="input-text" placeholder="Enter text to translate..."></textarea>
+    <div class="container">
+        <h1>🐾 Animal Translator 🐾</h1>
+        
+        <div class="form-group">
+            <label for="direction">Translation Direction:</label>
+            <select id="direction">
+                <option value="human-to-animal">Human to Animal</option>
+                <option value="animal-to-human">Animal to Human</option>
+            </select>
         </div>
         
-        <button id="translate-btn">Translate</button>
-        
-        <div class="output-area">
-          <label for="output-text">Translation:</label>
-          <textarea id="output-text" readonly></textarea>
+        <div class="form-group">
+            <label for="animal">Animal Type:</label>
+            <select id="animal">
+                <option value="dog">Dog 🐕</option>
+                <option value="cat">Cat 🐈</option>
+                <option value="cow">Cow 🐄</option>
+                <option value="chicken">Chicken 🐔</option>
+                <option value="horse">Horse 🐎</option>
+                <option value="pig">Pig 🐖</option>
+                <option value="sheep">Sheep 🐑</option>
+                <option value="goat">Goat 🐐</option>
+                <option value="duck">Duck 🦆</option>
+                <option value="frog">Frog 🐸</option>
+            </select>
         </div>
-      </div>
-      
-      <div id="loading" class="hidden">Translating... 🔄</div>
-      <div id="error-message" class="hidden"></div>
+        
+        <div class="form-group">
+            <label for="inputText">Text to Translate:</label>
+            <textarea id="inputText" placeholder="Enter text to translate..."></textarea>
+        </div>
+        
+        <button id="translateBtn">Translate</button>
+        
+        <div id="errorMessage" class="error" style="display: none;"></div>
+        
+        <div id="loading" class="loading">
+            <p>Translating... 🔄</p>
+        </div>
+        
+        <div id="result" class="result" style="display: none;">
+            <h3>Translation:</h3>
+            <p id="outputText"></p>
+        </div>
     </div>
-  </div>
-  
-  <script src="script.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const translateBtn = document.getElementById('translateBtn');
+            const inputText = document.getElementById('inputText');
+            const direction = document.getElementById('direction');
+            const animal = document.getElementById('animal');
+            const result = document.getElementById('result');
+            const outputText = document.getElementById('outputText');
+            const loading = document.getElementById('loading');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            translateBtn.addEventListener('click', async () => {
+                const text = inputText.value.trim();
+                
+                if (!text) {
+                    showError('Please enter some text to translate');
+                    return;
+                }
+                
+                // Show loading indicator
+                loading.style.display = 'block';
+                errorMessage.style.display = 'none';
+                result.style.display = 'none';
+                
+                try {
+                    const response = await fetch('/translate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            text,
+                            direction: direction.value,
+                            animal: animal.value
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error(data.details || data.error || 'Translation failed');
+                    }
+                    
+                    // Display result
+                    outputText.textContent = data.translation;
+                    result.style.display = 'block';
+                    
+                    // If it's a fallback response, add a warning class
+                    if (data.isFallback) {
+                        result.classList.add('api-limited');
+                    } else {
+                        result.classList.remove('api-limited');
+                    }
+                    
+                } catch (error) {
+                    showError(error.message);
+                } finally {
+                    loading.style.display = 'none';
+                }
+            });
+            
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.style.display = 'block';
+                result.style.display = 'none';
+            }
+        });
+    </script>
 </body>
 </html>

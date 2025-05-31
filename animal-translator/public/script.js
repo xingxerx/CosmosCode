@@ -1,38 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const animalSelect = document.getElementById('animal-select');
-  const directionSelect = document.getElementById('direction-select');
-  const inputText = document.getElementById('input-text');
-  const outputText = document.getElementById('output-text');
-  const translateBtn = document.getElementById('translate-btn');
+  const translateBtn = document.getElementById('translateBtn');
+  const inputText = document.getElementById('inputText');
+  const direction = document.getElementById('direction');
+  const animal = document.getElementById('animal');
+  const result = document.getElementById('result');
+  const outputText = document.getElementById('outputText');
   const loading = document.getElementById('loading');
-  const errorMessage = document.getElementById('error-message');
-
-  // Update placeholder based on selected direction and animal
-  function updatePlaceholder() {
-    const animal = animalSelect.value;
-    const direction = directionSelect.value;
-    
-    if (direction === 'human-to-animal') {
-      inputText.placeholder = `Enter human text to translate to ${animal} language...`;
-      outputText.placeholder = `${animal.charAt(0).toUpperCase() + animal.slice(1)} translation will appear here...`;
-    } else {
-      inputText.placeholder = `Enter ${animal} sounds to translate to human language...`;
-      outputText.placeholder = 'Human translation will appear here...';
-    }
-  }
-
-  // Event listeners for select changes
-  animalSelect.addEventListener('change', updatePlaceholder);
-  directionSelect.addEventListener('change', updatePlaceholder);
+  const errorMessage = document.getElementById('errorMessage');
   
-  // Initialize placeholder
-  updatePlaceholder();
-
-  // Handle translation
   translateBtn.addEventListener('click', async () => {
     const text = inputText.value.trim();
-    const animal = animalSelect.value;
-    const direction = directionSelect.value;
     
     if (!text) {
       showError('Please enter some text to translate');
@@ -40,9 +17,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Show loading indicator
-    loading.classList.remove('hidden');
-    errorMessage.classList.add('hidden');
-    outputText.value = '';
+    loading.style.display = 'block';
+    errorMessage.style.display = 'none';
+    result.style.display = 'none';
     
     try {
       const response = await fetch('/translate', {
@@ -50,25 +27,40 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ text, animal, direction })
+        body: JSON.stringify({
+          text,
+          direction: direction.value,
+          animal: animal.value
+        })
       });
       
+      const data = await response.json();
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.details || 'Translation failed');
+        throw new Error(data.details || data.error || 'Translation failed');
       }
       
-      const data = await response.json();
-      outputText.value = data.translation;
+      // Display result
+      outputText.textContent = data.translation;
+      result.style.display = 'block';
+      
+      // If it's a fallback response, add a warning class
+      if (data.isFallback) {
+        result.classList.add('api-limited');
+      } else {
+        result.classList.remove('api-limited');
+      }
+      
     } catch (error) {
       showError(error.message);
     } finally {
-      loading.classList.add('hidden');
+      loading.style.display = 'none';
     }
   });
   
   function showError(message) {
     errorMessage.textContent = message;
-    errorMessage.classList.remove('hidden');
+    errorMessage.style.display = 'block';
+    result.style.display = 'none';
   }
 });
