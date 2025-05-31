@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Network Simulation Visualizer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .header {
+      background-color: #333;
+      color: white;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    .network-stats {
+      background-color: white;
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .network-map {
+      background-color: white;
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      height: 500px;
+      position: relative;
+    }
+    .node {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .node:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+    .node-server {
+      background-color: #4CAF50;
+    }
+    .node-client {
+      background-color: #2196F3;
+    }
+    .node-router {
+      background-color: #FF9800;
+    }
+    .node-firewall {
+      background-color: #F44336;
+    }
+    .connection {
+      position: absolute;
+      height: 2px;
+      background-color: #999;
+      transform-origin: left center;
+      z-index: -1;
+    }
+    .node-info {
+      position: absolute;
+      background-color: white;
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: none;
+      z-index: 10;
+    }
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      padding: 8px 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    button.stop {
+      background-color: #F44336;
+    }
+    button.stop:hover {
+      background-color: #d32f2f;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Network Simulation Visualizer</h1>
+    </div>
+    
+    <div class="network-stats">
+      <h2>Network Statistics</h2>
+      <div id="stats-container">
+        <p>Loading network statistics...</p>
+      </div>
+    </div>
+    
+    <div class="network-map" id="network-map">
+      <p>Loading network visualization...</p>
+    </div>
+    
+    <div class="controls">
+      <button id="refresh-btn">Refresh</button>
+      <button id="add-client-btn">Add Client</button>
+      <button id="add-server-btn">Add Server</button>
+      <button id="add-router-btn">Add Router</button>
+      <button id="clear-btn" class="stop">Clear Network</button>
+    </div>
+  </div>
+
+  <script>
+    // Network data
+    let networkData = {
+      nodes: [],
+      connections: []
+    };
+    
+    // DOM elements
+    const networkMap = document.getElementById('network-map');
+    const statsContainer = document.getElementById('stats-container');
+    const refreshBtn = document.getElementById('refresh-btn');
+    const addClientBtn = document.getElementById('add-client-btn');
+    const addServerBtn = document.getElementById('add-server-btn');
+    const addRouterBtn = document.getElementById('add-router-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    
+    // Event listeners
+    refreshBtn.addEventListener('click', fetchNetworkData);
+    addClientBtn.addEventListener('click', () => addNode('client'));
+    addServerBtn.addEventListener('click', () => addNode('server'));
+    addRouterBtn.addEventListener('click', () => addNode('router'));
+    clearBtn.addEventListener('click', clearNetwork);
+    
+    // Initialize
+    fetchNetworkData();
+    
+    // Functions
+    async function fetchNetworkData() {
+      try {
+        const response = await fetch('/api/network/status');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        updateNetworkStats(data);
+        
+        const nodesResponse = await fetch('/api/network/nodes');
+        if (!nodesResponse.ok) {
+          throw new Error(`HTTP error! status: ${nodesResponse.status}`);
+        }
+        networkData.nodes = await nodesResponse.json();
+        
+        const connectionsResponse = await fetch('/api/network/connections');
+        if (!connectionsResponse.ok) {
+          throw new Error(`HTTP error! status: ${connectionsResponse.status}`);
+        }
+        networkData.connections = await connectionsResponse.json();
+        
+        renderNetwork();
+      } catch (error) {
+        console.error('Error fetching network data:', error);
+        statsContainer.innerHTML = `<p>Error: ${error.message}</p>`;
+        networkMap.innerHTML = `<p>Error: ${error.message}</p>`;
+      }
+    }
+    
+    function updateNetworkStats(data) {
+      statsContainer.innerHTML = `
+        <div>
+          <p><strong>Nodes:</strong> ${data.nodeCount}</p>
+          <p><strong>Connections:</strong> ${data.connectionCount}</p>
+          <p><strong>Active Nodes:</strong> ${data.activeNodeCount}</p>
+          <p><strong>Messages Sent:</strong> ${data.messagesSent}</p>
+          <p><strong>Messages Delivered:</strong> ${data.messagesDelivered}</p>
+          <p><strong>Packet Loss Rate:</strong> ${(data.packetLossRate * 100).toFixed(2)}%</p>
+        </div>
+      `;
+    }
+    
+    function renderNetwork() {
+      // Clear previous rendering
+      networkMap.innerHTML = '';
+      
+      // Add connections first (so they appear behind nodes)
+      networkData.connections.forEach(connection => {
+        const sourceNode = networkData.nodes.find(n => n.id === connection.source);
+        const targetNode = networkData.nodes.find(n => n.id === connection.target);
+        
+        if (sourceNode && targetNode) {
+          addConnection(sourceNode, targetNode, connection);
+        }
+      });
+      
+      // Add nodes
+      networkData.nodes.forEach(node => {
+        addNodeElement(node);
+      });
+    }
+    
+    function addNodeElement(node) {
+      const nodeElement = document.createElement('div');
+      nodeElement.className = `node node-${node.type}`;
+      nodeElement.id = `node-${node.id}`;
+      nodeElement.textContent = node.id;
+      
+      // Position randomly but avoid edges
+      const mapWidth = networkMap.clientWidth - 80;
+      const mapHeight = networkMap.clientHeight - 80;
+      const left = 40 + Math.random() * mapWidth;
+      const top = 40 + Math.random() * mapHeight;
+      
+      nodeElement.style.left = `${left}px`;
+      nodeElement.style.top = `${top}px`;
+      
+      // Store position for connection calculations
+      node.position = { x: left + 30, y: top + 30 };
+      
+      // Add node info popup
+      nodeElement.addEventListener('click', () => showNodeInfo(node, left, top));
+      
+      networkMap.appendChild(nodeElement);
+    }
+    
+    function addConnection(sourceNode, targetNode, connection) {
+      if (!sourceNode.position || !targetNode.position) return;
+      
+      const connectionElement = document.createElement('div');
+      connectionElement.className = 'connection';
+      
+      // Calculate position and dimensions
+      const dx = targetNode.position.x - sourceNode.position.x;
+      const dy = targetNode.position.y - sourceNode.position.y;
+      const length = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+      
+      connectionElement.style.width = `${length}px`;
+      connectionElement.style.left = `${sourceNode.position.x}px`;
+      connectionElement.style.top = `${sourceNode.position.y}px`;
+      connectionElement.style.transform = `rotate(${angle}deg)`;
+      
+      networkMap.appendChild(connectionElement);
+    }
+    
+    function showNodeInfo(node, left, top) {
+      // Remove any existing node info
+      const existingInfo = document.querySelector('.node-info');
+      if (existingInfo) {
+        existingInfo.remove();
+      }
+      
+      // Create node info element
+      const infoElement = document.createElement('div');
+      infoElement.className = 'node-info';
+      infoElement.innerHTML = `
+        <h3>${node.id}</h3>
+        <p><strong>Type:</strong> ${node.type}</p>
+        <p><strong>IP:</strong> ${node.ip}</p>
+        <p><strong>Status:</strong> ${node.status}</p>
+        <div>
+          <button class="toggle-status">${node.status === 'active' ? 'Deactivate' : 'Activate'}</button>
+          <button class="delete-node">Delete</button>
+        </div>
+      `;
+      
+      // Position the info element
+      infoElement.style.left = `${left + 70}px`;
+      infoElement.style.top = `${top}px`;
+      
+      // Add event listeners
+      const toggleBtn = infoElement.querySelector('.toggle-status');
+      toggleBtn.addEventListener('click', () => toggleNodeStatus(node.id));
+      
+      const deleteBtn = infoElement.querySelector('.delete-node');
+      deleteBtn.addEventListener('click', () => deleteNode(node.id));
+      
+      // Add to DOM
+      networkMap.appendChild(infoElement);
+      infoElement.style.display = 'block';
+      
+      // Close when clicking elsewhere
+      document.addEventListener('click', function closeInfo(e) {
+        if (!infoElement.contains(e.target) && e.target.id !== `node-${node.id}`) {
+          infoElement.remove();
+          document.removeEventListener('click', closeInfo);
+        }
+      });
+    }
+    
+    async function addNode(type) {
+      try {
+        const response = await fetch('/api/network/nodes', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ type })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        fetchNetworkData();
+      } catch (error) {
+        console.error('Error adding node:', error);
+        alert(`Failed to add node: ${error.message}`);
+      }
+    }
+    
+    async function toggleNodeStatus(nodeId) {
+      try {
+        const node = networkData.nodes.find(n => n.id === nodeId);
+        const action = node.status === 'active' ? 'stop' : 'start';
+        
+        const response = await fetch(`/api/network/${action}-node/${nodeId}`, {
+          method: 'POST'
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        fetchNetworkData();
+      } catch (error) {
+        console.error('Error toggling node status:', error);
+        alert(`Failed to toggle node status: ${error.message}`);
+      }
+    }
+    
+    async function deleteNode(nodeId) {
+      try {
+        const response = await fetch(`/api/network/nodes/${nodeId}`, {
+          method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        fetchNetworkData();
+      } catch (error) {
+        console.error('Error deleting node:', error);
+        alert(`Failed to delete node: ${error.message}`);
+      }
+    }
+    
+    async function clearNetwork() {
+      if (!confirm('Are you sure you want to clear the entire network?')) {
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/network/clear', {
+          method: 'POST'
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        fetchNetworkData();
+      } catch (error) {
+        console.error('Error clearing network:', error);
+        alert(`Failed to clear network: ${error.message}`);
+      }
+    }
+  </script>
+</body>
+</html>
