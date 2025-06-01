@@ -33,6 +33,7 @@
   "dependencies": {
     "@zowe/cli": "^8.20.0",
     "express": "^5.1.0",
+    "firebase": "^11.7.3",
     "helmet": "^8.1.0"
   },
   "devDependencies": {

@@ -1,0 +1,20 @@
+{
+  "rules": {
+    "sensor_data": {
+      ".read": true,
+      ".write": true
+      // If you are POSTing to sensor_data to create new child nodes
+      // with unique IDs, you might also need to allow writes on child nodes.
+      // For a simple POST to /sensor_data.json that *replaces* sensor_data,
+      // the above should be enough. If you intend to push new entries *under*
+      // sensor_data, your URL in the code should be just
+      // "https://cgxcosmoscodegit-06867661.firebaseio.com/sensor_data.json"
+      // and Firebase will generate a unique key under sensor_data.
+    }
+    // If you want to allow writes to any path for testing:
+    // "$any_path": {
+    //   ".write": true,
+    //   ".read": true
+    // }
+  }
+}
