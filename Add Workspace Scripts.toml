@@ -1,0 +1,7 @@
+[[bin]]
+name = "run_all"
+path = "scripts/run_all.rs"
+[[bin]]
+name = "test_all"
+path = "scripts/test_all.rs"
+

@@ -1,0 +1,11 @@
+name: Deploy CosmosCode
+on:
+  push:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: docker build -t cosmos-api .
+      - run: docker run cosmos-api

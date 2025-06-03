@@ -1,0 +1,37 @@
+# Clone the repository to a completely different location
+cd /tmp
+git clone https://github.com/xingxerx/CosmosCode.git
+
+# Navigate to the new clone
+cd CosmosCode
+
+# Copy your changes from the original repository
+# Be careful to only copy source files, not node_modules or other large files
+cp -r /mnt/f/CosmosCode/src/* ./src/
+cp -r /mnt/f/CosmosCode/package.json ./
+
+# Add, commit, and push
+git add .
+git commit -m "Update with latest changes"
+git push
+
+# Exit WSL and open Windows Command Prompt or PowerShell as Administrator
+# Then run these commands in Windows:
+
+# Navigate to your repository
+cd F:\CosmosCode
+
+# Remove the lock file using Windows commands
+del .git\index.lock
+
+# Check if there are any other lock files
+dir .git\*.lock /s
+
+# If you find other lock files, remove them too
+del .git\*.lock /s
+
+# Now go back to WSL and try again
+
+
+
+

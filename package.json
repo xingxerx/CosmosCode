@@ -1,0 +1,66 @@
+{
+  "name": "cosmoscode",
+  "version": "1.0.0",
+  "description": "Cosmology and Medicine Codebase",
+  "main": "index.js",
+  "scripts": {
+    "test": "NODE_ENV=test jest",
+    "test:watch": "NODE_ENV=test jest --watch",
+    "test:coverage": "NODE_ENV=test jest --coverage",
+    "test:integration": "NODE_ENV=test jest --config=jest.integration.config.js",
+    "test:e2e": "NODE_ENV=test ./run-e2e-tests.sh",
+    "test:all": "NODE_ENV=test ./run-all-tests.sh",
+    "test:jit": "NODE_ENV=test ./run-tests-jit.sh",
+    "test:summary": "NODE_ENV=test ./test-summary.sh",
+    "test:report": "NODE_ENV=test ./test-report.sh",
+    "test:benchmark": "NODE_ENV=test ./benchmark-tests.sh",
+    "test:cleanup": "NODE_ENV=test ./cleanup-tests.sh",
+    "test:coverage-report": "NODE_ENV=test ./generate-coverage-report.sh",
+    "test:simple": "NODE_ENV=test node src/simple-test.js",
+    "test:network": "NODE_ENV=test node src/network/network-tests.js",
+    "test:visual": "NODE_ENV=test ./run-visual-tests.sh",
+    "test:watch-tests": "NODE_ENV=test ./watch-tests.sh",
+    "test:snapshots": "NODE_ENV=test ./run-snapshot-tests.sh",
+    "start": "NODE_ENV=test node src/index.js",
+    "dev": "NODE_ENV=test nodemon src/index.js",
+    "lint": "eslint .",
+    "network:terminal": "NODE_ENV=test node src/network/network-terminal.js",
+    "start:network": "NODE_ENV=development node start-server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@zowe/cli": "^8.20.0",
+    "express": "^5.1.0",
+    "firebase": "^11.7.3",
+    "helmet": "^8.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.27.0",
+    "@typescript-eslint/parser": "^8.33.0",
+    "axios": "^1.6.0",
+    "eslint": "^9.27.0",
+    "globals": "^16.2.0",
+    "jest": "^29.5.0",
+    "nodemon": "^3.1.10",
+    "puppeteer": "^22.8.2",
+    "supertest": "^6.3.3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.33.0",
+    "wait-on": "^7.0.1"
+  },
+  "overrides": {
+    "tar-fs": "^3.0.7",
+    "ws": "^8.17.1",
+    "glob": "^10.3.10",
+    "rimraf": "^5.0.5",
+    "superagent": "^9.0.0",
+    "@humanwhocodes/config-array": "^1.0.1",
+    "@humanwhocodes/object-schema": "^2.0.4",
+    "inflight": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

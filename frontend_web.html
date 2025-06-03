@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CGX Omni WiFi Monitor</title>
+    <script>
+        async function fetchData(endpoint) {
+            let response = await fetch(endpoint);
+            let data = await response.json();
+            document.getElementById(endpoint).innerText = JSON.stringify(data, null, 2);
+        }
+    </script>
+</head>
+<body>
+    <h1>CGX Omni WiFi Status</h1>
+    <button onclick="fetchData('/latency')">Check Latency</button>
+    <pre id="/latency"></pre>
+    
+    <button onclick="fetchData('/firewall')">Check Firewall</button>
+    <pre id="/firewall"></pre>
+    
+    <button onclick="fetchData('/alerts')">View Alerts</button>
+    <pre id="/alerts"></pre>
+</body>
+</html>

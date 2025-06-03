@@ -1,0 +1,26 @@
+name: Deploy CosmosCode
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build Docker image
+        run: |
+          docker build -t yourdockerhubuser/cosmos-api .
+
+      - name: Push to Docker Hub
+        run: |
+          docker login -u ${{ secrets.DOCKER_USER }} -p ${{ secrets.DOCKER_PASS }}
+          docker push yourdockerhubuser/cosmos-api:latest
+
+      - name: Deploy container
+        run: |
+          docker run -d -p 8000:8000 yourdockerhubuser/cosmos-api:latest

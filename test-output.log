@@ -1,0 +1,100 @@
+Test files cleaned up successfully!
+Skipping E2E tests (use --with-e2e to include them)
+Modified /home/xingxerx/CosmosCode-1/e2e/app.test.js to skip tests
+Modified /home/xingxerx/CosmosCode-1/e2e/simulation.test.js to skip tests
+E2E tests will be skipped during this run
+● Validation Warning:
+
+  Unknown option "testTimeout" with value 30000 was found.
+  This is probably a typing mistake. Fixing it will remove this message.
+
+  Configuration Documentation:
+  https://jestjs.io/docs/configuration
+
+● Validation Warning:
+
+  Unknown option "testTimeout" with value 60000 was found.
+  This is probably a typing mistake. Fixing it will remove this message.
+
+  Configuration Documentation:
+  https://jestjs.io/docs/configuration
+
+PASS unit src/__tests__/api.test.js
+  API Endpoints
+    ✓ GET /api/health returns 200 (43 ms)
+    ✓ POST /api/simulations creates a new simulation (24 ms)
+    ✓ GET /api/simulations returns a list of simulations (10 ms)
+
+PASS unit src/api/routes.test.js
+  API Routes
+    ✓ GET /api/health returns 200 (10 ms)
+    ✓ POST /api/simulations creates a new simulation (11 ms)
+
+PASS unit src/__tests__/integration/simulation-visualization.test.js
+  Simulation to Visualization Integration
+    ✓ can create visualization from simulation (47 ms)
+
+  console.log
+    Routing message from client to server through path: client → router → server
+
+      at SimulatedInternet.log [as sendRoutedMessage] (src/network/simulated-internet.js:201:13)
+
+PASS unit src/network/__tests__/simulated-internet.test.js
+  SimulatedInternet
+    ✓ should create nodes (1 ms)
+    ✓ should connect nodes (1 ms)
+    ✓ should start and stop nodes (1 ms)
+    ✓ should send messages between directly connected nodes (2 ms)
+    ✓ should route messages through intermediate nodes (13 ms)
+
+PASS unit src/services/cosmology/simulationEngine.simple.test.js (5.161 s)
+  Simulation Engine
+    ✓ should run a simulation with parameters (2 ms)
+
+PASS unit src/services/cosmology/simulationEngine.test.js
+  Simulation Engine
+    ✓ Run simulation with parameters (1 ms)
+    ✓ Handle empty parameters (1 ms)
+    ✓ Different simulation types (1 ms)
+
+PASS unit src/api/routes.simple.test.js
+  API Routes
+    ✓ should return 400 when simulation ID is missing (2 ms)
+    ✓ should return simulation data when ID is provided (1 ms)
+
+PASS unit src/services/medical/integrationService.test.js
+  Medical Integration Service
+    ✓ should perform integrated analysis between medical and cosmology data (5 ms)
+    ✓ should handle errors during integration (6 ms)
+
+PASS unit src/services/medical/patientAnalysis.test.js
+  Patient Analysis Service
+    ✓ should analyze patient data and return insights (3 ms)
+    ✓ should generate insights from analysis results (1 ms)
+
+PASS unit src/services/cosmology/cosmology.spec.js
+  Cosmology Module
+    ✓ should run a simulation with parameters (2 ms)
+    ✓ should handle empty parameters (1 ms)
+
+PASS unit src/services/medical/integrationService.simple.test.js
+  Medical Integration Service
+    ✓ should perform integrated analysis between medical and cosmology data (4 ms)
+    ✓ should handle errors during integration
+
+PASS unit src/services/cosmology/cosmologySimulation.test.js
+  Cosmology Simulation
+    ✓ should run a simulation with parameters (1 ms)
+
+PASS unit src/__tests__/simulation.test.js
+  Simulation Service
+    ✓ generates a valid simulation with default parameters (1 ms)
+    ✓ handles different simulation types (1 ms)
+    ✓ respects complexity settings
+
+Test Suites: 2 skipped, 13 passed, 13 of 15 total
+Tests:       5 skipped, 29 passed, 34 total
+Snapshots:   0 total
+Time:        1.238 s
+Ran all test suites in 2 projects.
+Tests completed

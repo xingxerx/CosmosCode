@@ -1,0 +1,26 @@
+# Sample static network links configuration
+
+[[link]]
+id = "core-router-to-server-1"
+source_node = "CoreRouter_A"
+target_node = "WebServer_01"
+link_type = "Fiber_10G"
+capacity_mbps = 10000
+latency_ms = 1
+
+[[link]]
+id = "office-switch-to-ap-1"
+source_node = "OfficeSwitch_Main"
+target_node = "AccessPoint_Floor1_North"
+link_type = "Ethernet_1G"
+capacity_mbps = 1000
+latency_ms = 2
+
+# If you added the third link we discussed:
+[[link]]
+id = "server-to-storage-1"
+source_node = "WebServer_01"
+target_node = "StorageArray_A"
+link_type = "FiberChannel_8G"
+capacity_mbps = 8000
+latency_ms = 1

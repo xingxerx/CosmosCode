@@ -1,0 +1,14 @@
+[Interface]
+PrivateKey = B_PRIVATE_KEY
+Address = 10.13.13.2/24
+ListenPort = 51820
+
+[Peer]
+PublicKey = A_PUBLIC_KEY
+Endpoint = NODE_A_PUBLIC_IP:51820
+AllowedIPs = 10.13.13.1/32
+
+[Peer]
+PublicKey = C_PUBLIC_KEY
+Endpoint = NODE_C_PUBLIC_IP:51820
+AllowedIPs = 10.13.13.3/32

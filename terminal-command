@@ -1,0 +1,18 @@
+# Create a fresh clone of your repository (if it's on a remote server)
+cd /tmp
+git clone https://github.com/yourusername/CosmosCode.git fresh-cosmos
+cd fresh-cosmos
+
+# Or create a new repository and copy your files (if you don't want to lose work)
+mkdir /tmp/fresh-cosmos
+cd /tmp/fresh-cosmos
+git init
+cp -r /mnt/f/CosmosCode/* .  # Copy all files except .git directory
+git add .
+git commit -m "Fresh start"
+
+# If you have a remote repository, add it and push
+git remote add origin https://github.com/yourusername/CosmosCode.git
+git push -f origin main  # Be careful with force push!
+
+
